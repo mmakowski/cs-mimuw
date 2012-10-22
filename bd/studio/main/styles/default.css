@@ -1,0 +1,141 @@
+INPUT {
+  COLOR: #000000; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt;
+  BACKGROUND-COLOR: #E0E0E0
+}
+
+SELECT {
+  COLOR: #000000; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt; 
+  BACKGROUND-COLOR: #E0E0E0
+}
+
+TEXTAREA {
+  COLOR: #000000; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt; 
+  BACKGROUND-COLOR: #E0E0E0
+}
+
+P { 
+  COLOR: #000000; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt 
+}
+
+OL { 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt 
+}
+
+LI { 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt 
+}
+
+B { 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-WEIGHT: bold; 
+  FONT-SIZE: 8pt
+}
+
+I { 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt 
+}
+
+TD { 
+  COLOR: #000000; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt 
+}
+
+.small { 
+  FONT-SIZE: 6pt; 
+}
+
+.ok { 
+  COLOR: #006600; 
+}
+
+.warn { 
+  COLOR: #ff0000; 
+}
+
+.nagl1 { 
+  COLOR: #006699; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 12pt; 
+  FONT-WEIGHT: bold; 
+  TEXT-DECORATION: ; 
+  TEXT-ALIGN: center
+}
+
+.nagl2 { 
+  COLOR: #002255; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 10pt; 
+  FONT-WEIGHT: bold; 
+  TEXT-DECORATION: ; 
+  TEXT-ALIGN: center
+}
+
+.btnsel { 
+  COLOR: #ffffff; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt; 
+  FONT-WEIGHT: bold; 
+  TEXT-DECORATION: underline; 
+  TEXT-ALIGN: center
+}
+
+.btndis { 
+  COLOR: #cccccc; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt; 
+  FONT-WEIGHT: bold; 
+  TEXT-DECORATION: none; 
+  TEXT-ALIGN: center
+}
+
+A.link { 
+  COLOR: #000060; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt; 
+  FONT-WEIGHT: bold; 
+  TEXT-DECORATION: none 
+}
+
+A.link:hover { 
+  COLOR: #0044cc; 
+  TEXT-DECORATION: underline 
+}
+
+A.warnlink { 
+  COLOR: #aa0000; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt; 
+  FONT-WEIGHT: bold; 
+  TEXT-DECORATION: none 
+}
+
+A.warnlink:hover { 
+  COLOR: #ff0000; 
+  TEXT-DECORATION: underline 
+}
+
+A.btnlink { 
+  COLOR: #ffeeaa; 
+  FONT-FAMILY: Arial CE,Arial,Sans-serif; 
+  FONT-SIZE: 8pt; 
+  FONT-WEIGHT: bold; 
+  TEXT-DECORATION: none; 
+  TEXT-ALIGN: center
+}
+
+A.btnlink:hover { 
+  COLOR: #ffffff; 
+  TEXT-DECORATION: underline 
+}
