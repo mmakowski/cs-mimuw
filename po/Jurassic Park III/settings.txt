@@ -1,0 +1,157 @@
+"
+#######################################################
+Tutaj ustawia sie wlasciwosci gry
+ 
+ * sekcja colors   - kolory pol
+ * sekcja settings - parametry gry
+ * sekcja levels   - poziomy trudnoœci
+
+#######################################################
+"
+begin colors "-----------------------------------------"
+
+  "kolory podawane sa w postaci rr|gg|bb gdzie kazda 
+   wspolrzedna RGB jest liczba w systemie heksadecymalnym
+   z przedzialu 00..FF. Cyfry A..F nalezy pisac wielkimi
+   literami"
+
+  BaseColor   = FF|64|64
+  ForestColor = 00|8C|00
+  PlainsColor = C8|C8|00
+  RiverColor  = 00|64|C8
+  RoadColor   = 96|64|32
+  RocksColor  = 64|64|64
+  SeaColor    = 00|32|C8 
+
+end colors "-------------------------------------------"
+
+"######################################################"
+
+begin settings "---------------------------------------"
+ 
+"###                  Zasieg wzroku                 ###"
+
+  DDSight = 12
+  HumanSight = 7
+  MachineSight = 3
+  DinoSight = 6
+
+"###                    Predkosc                    ###"
+
+  "dinozaury"
+  DinoRoadMoveCost = 1.5
+  DinoPlainsMoveCost = 2
+  DinoForestMoveCost = 4
+  BrontosaurMoves = 8
+  TyrannosaurMoves = 11
+  
+  "ludzie"
+  HumanRoadMoveCost = 1.5
+  HumanPlainsMoveCost = 2.5
+  HumanForestMoveCost = 3
+  ClimberRocksMoveCost = 6
+  SwimmerRiverMoveCost = 5
+  HumanMoves = 9
+  SupervisorMoves = 7
+
+  "maszyny"
+  BridgeBuilderRoadMoveCost = 1
+  BridgeBuilderPlainsMoveCost = 3
+  BridgeBuilderRiverMoveCost = 6
+  BridgeBuilderMoves = 10
+  RoadBuilderRoadMoveCost = 1
+  RoadBuilderPlainsMoveCost = 3
+  RoadBuilderForestMoveCost = 5
+  RoadBuilderMoves = 10
+  DinosaurCatcherRoadMoveCost = 1
+  DinosaurCatcherPlainsMoveCost = 3
+  DinosaurCatcherMoves = 15
+  TransporterRoadMoveCost = 1
+  TransporterPlainsMoveCost = 3
+  TransporterMoves = 12
+
+"### Zuzycie paliwa i pojemnosc baku oraz ladownosc ###"
+
+  HumanMaxDDs = 5
+  SwimmerMaxDDs = 1
+  ClimberMaxDDs = 1
+  BridgeBuilderFuelUsage = 3
+  BridgeBuilderMaxFuel = 600
+  BridgeBuilderMaxResources = 50
+  RoadBuilderFuelUsage = 3
+  RoadBuilderMaxFuel = 600
+  RoadBuilderMaxResources = 50
+  DinosaurCatcherFuelUsage = 1.5
+  DinosaurCatcherMaxFuel = 300
+  TransporterFuelUsage = 3
+  TransporterMaxFuel = 500
+  TransporterMaxCargo = 1500
+
+"###                Parametry budowy                ###"
+
+  BridgeBuilderMaxDelivery = 10
+  RoadBuilderMaxDelivery = 10
+  ForestRoadCost = 30
+  RiverBridgeCost = 45
+     
+end settings "-----------------------------------------"
+
+"######################################################"
+
+begin levels "---------------------------------------"
+
+  "Latwy"
+  begin level 
+    LevelName = £atwy
+    TurnLimit = 10000
+    DinoIQLevel = 0
+    Brontos = 10
+    Tyrranos = 5
+    Money = 2200
+    DDPrice = 5
+    HumanPrice = 10
+    ClimberPrice = 40
+    SwimmerPrice = 30
+    TransporterPrice = 120
+    DinosaurCatcherPrice = 70
+    BridgeBuilderPrice = 200
+    RoadBuilderPrice = 160
+  end level
+ 
+  "Normalny"
+  begin level
+    LevelName = Normalny
+    TurnLimit = 4000
+    DinoIQLevel = 1
+    Brontos = 16
+    Tyrranos = 8
+    Money = 1600
+    DDPrice = 5
+    HumanPrice = 10
+    ClimberPrice = 40
+    SwimmerPrice = 30
+    TransporterPrice = 120
+    DinosaurCatcherPrice = 70
+    BridgeBuilderPrice = 200
+    RoadBuilderPrice = 160
+  end level
+
+  "Trudny"
+  begin level
+    LevelName = Trudny
+    TurnLimit = 1000
+    DinoIQLevel = 2
+    Brontos = 20
+    Tyrranos = 12
+    Money = 1200
+    DDPrice = 5
+    HumanPrice = 10
+    ClimberPrice = 40
+    SwimmerPrice = 30
+    TransporterPrice = 120
+    DinosaurCatcherPrice = 70
+    BridgeBuilderPrice = 200
+    RoadBuilderPrice = 160
+  end level
+   
+end levels "-----------------------------------------"
