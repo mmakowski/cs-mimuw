@@ -4,20 +4,20 @@ autor: Maciek Makowski (189188)
 
 1. Testy
 
-* ¦rodowisko testowe: komputer wyposa¿ony w procesor AMD Athlon 800 i 224 MB RAM pracuj±cym pod kontrol± systemu Debian GNU/Linux (j±dro 2.4.3)
-* czasy by³y mierzone przy u¿yciu funkcji gettimeofday()
-* wszystkie testy zosta³y przeprowadzone na wersjach kopiuj±cych dodatkowy komunikat do przestrzeni adresowej procesu (kontekstu w±tku). Ze wzglêdu na implementacjê mechanizmów w±tków i pamiêci dzielonej w moim rozwi±zaniu przeprowadzanie testów bez kopiowania by³o bezcelowe, gdy¿ w powy¿szych mechanizmach zastosowa³em pe³ne buforowanie, czyli proces pisz±cy nigdy nie oczekiwa³ na zwolnienie siê miejsca na komunikat, a co za tym idzie jedyne opó¼nienie na które mia³ wp³yw dodatkowy komunikat zwi±zane by³o w³a¶nie z kopiowaniem komunikatu. Mo¿na wiêc przyj±æ, ¿e w implementacji bez kopiowania komunikatu wyniki s± takie same, jak przy komunikacie o d³ugo¶ci 0.
-* dla ka¿dej metody komunikacje przeprowadzi³em 4 rodzaje testów:
-1. du¿ej liczby procesów przy minimalnym obci±¿eniu jednego procesu (N = 2, D = 250)
-2. minimalnej liczby procesów przy du¿ym obci±¿eniu jednego procesu (N = 250, D = 2)
-3. du¿ej liczby procesów przy ¶rednim obci±¿eniu jednego procesu (N = 25, D = 250)
-4. ¶redniej liczby procesów przy du¿ym obci±¿eniu jednego procesu (N = 250, D = 25)
-* ka¿dy z powy¿szych testów zosta³ przeprowadzony dla d³ugo¶ci dodatkowego komunikatu wynosz±cych 0, 1000 i 2000.
-* ka¿dy z testów zosta³ uruchomiony siedem razy - warto¶ci w tabeli poni¿ej stanowi± ¶redni± ze wszystkich uruchomieñ
+* Åšrodowisko testowe: komputer wyposaÅ¼ony w procesor AMD Athlon 800 i 224 MB RAM pracujÄ…cym pod kontrolÄ… systemu Debian GNU/Linux (jÄ…dro 2.4.3)
+* czasy byÅ‚y mierzone przy uÅ¼yciu funkcji gettimeofday()
+* wszystkie testy zostaÅ‚y przeprowadzone na wersjach kopiujÄ…cych dodatkowy komunikat do przestrzeni adresowej procesu (kontekstu wÄ…tku). Ze wzglÄ™du na implementacjÄ™ mechanizmÃ³w wÄ…tkÃ³w i pamiÄ™ci dzielonej w moim rozwiÄ…zaniu przeprowadzanie testÃ³w bez kopiowania byÅ‚o bezcelowe, gdyÅ¼ w powyÅ¼szych mechanizmach zastosowaÅ‚em peÅ‚ne buforowanie, czyli proces piszÄ…cy nigdy nie oczekiwaÅ‚ na zwolnienie siÄ™ miejsca na komunikat, a co za tym idzie jedyne opÃ³Åºnienie na ktÃ³re miaÅ‚ wpÅ‚yw dodatkowy komunikat zwiÄ…zane byÅ‚o wÅ‚aÅ›nie z kopiowaniem komunikatu. MoÅ¼na wiÄ™c przyjÄ…Ä‡, Å¼e w implementacji bez kopiowania komunikatu wyniki sÄ… takie same, jak przy komunikacie o dÅ‚ugoÅ›ci 0.
+* dla kaÅ¼dej metody komunikacje przeprowadziÅ‚em 4 rodzaje testÃ³w:
+1. duÅ¼ej liczby procesÃ³w przy minimalnym obciÄ…Å¼eniu jednego procesu (N = 2, D = 250)
+2. minimalnej liczby procesÃ³w przy duÅ¼ym obciÄ…Å¼eniu jednego procesu (N = 250, D = 2)
+3. duÅ¼ej liczby procesÃ³w przy Å›rednim obciÄ…Å¼eniu jednego procesu (N = 25, D = 250)
+4. Å›redniej liczby procesÃ³w przy duÅ¼ym obciÄ…Å¼eniu jednego procesu (N = 250, D = 25)
+* kaÅ¼dy z powyÅ¼szych testÃ³w zostaÅ‚ przeprowadzony dla dÅ‚ugoÅ›ci dodatkowego komunikatu wynoszÄ…cych 0, 1000 i 2000.
+* kaÅ¼dy z testÃ³w zostaÅ‚ uruchomiony siedem razy - wartoÅ›ci w tabeli poniÅ¼ej stanowiÄ… Å›redniÄ… ze wszystkich uruchomieÅ„
 
-wyniki testów:
+wyniki testÃ³w:
 
-nr | (N, D)    | L    | w±tki           | pamiêæ dzielona | fifo
+nr | (N, D)    | L    | wÄ…tki           | pamiÄ™Ä‡ dzielona | fifo
 ---+-----------+------+-----------------+-----------------+-----------------
 1. | (2, 250)  | 0    |   546       (2) |   478       (2) |   365      (50) 
    |           | 1000 |   719       (2) |   694       (3) |   471      (70) 
@@ -35,17 +35,17 @@ nr | (N, D)    | L    | w±tki           | pamiêæ dzielona | fifo
    |           | 1000 |  5080     (500) |  6970     (300) |  2879     (700) 
    |           | 2000 | 10874     (300) | 12361    (1000) |  4476     (500) 
 
-* czasy podane s± w dziesiêciotysiecznych czê¶ciach sekundy
-* w nawiasach podane jest maksymalne zaobserwowane odchylenie od ¶redniej warto¶ci
+* czasy podane sÄ… w dziesiÄ™ciotysiecznych czÄ™Å›ciach sekundy
+* w nawiasach podane jest maksymalne zaobserwowane odchylenie od Å›redniej wartoÅ›ci
 
 2. Komentarz
 
-Wyniki implementacji na w±tkach i przy u¿yciu pamiêci dzielonej s±, zgodnie z przewidywaniami, porównywalne. Zastrzec wypada³oby jedynie, ¿e w±tki dzia³aj± znacz±co lepiej od pamiêci dzielonej w przypadku du¿ej liczby krótkich komunikatów (testy 3 i 4 bez dodatkowego komunikatu); poza tym w wiêkszosci przypadków w±tki komunikowa³y siê nieznacznie szybciej.
-Wyj±tkowa jest natomiast szybko¶æ ³±cz nazwanych; o ile w przypadku krótkich komunikatów (znów testy 3 i 4 bez dodatkowego komunikatu) fifo wypada gorzej od w±tków (choæ lepiej od pamiêci dzielonej), to w przypadku du¿ej liczby d³ugich komunikatów jest bezkonkurencyjna.
-Czas potrzebny na komunikacjê jest w przypadku ka¿dej z metod liniowo zale¿ny od rozmiaru komunikatu - w tym przypadku ¿aden ze sposobów komunikacji nie jest faworyzowany.
-Porównanie wyników testów 2 i 4 dostarcza nam informacji o tym, jak wp³ywa zwiêkszenie liczby komunikuj±cych siê procesów na czas obliczeñ. W przypadku w±tków i pamiêci dzielonej ponad dziesiêciokrotne zwiêkszenie liczby procesów wyd³u¿y³o czas obliczeñ zaledwie dwukrotnie; w przypadku fifo takie samo zwiêkszenie liczby procesów doprowadzi³o do piêciokrotnego wyd³u¿enia czasu obliczeñ.
+Wyniki implementacji na wÄ…tkach i przy uÅ¼yciu pamiÄ™ci dzielonej sÄ…, zgodnie z przewidywaniami, porÃ³wnywalne. Zastrzec wypadaÅ‚oby jedynie, Å¼e wÄ…tki dziaÅ‚ajÄ… znaczÄ…co lepiej od pamiÄ™ci dzielonej w przypadku duÅ¼ej liczby krÃ³tkich komunikatÃ³w (testy 3 i 4 bez dodatkowego komunikatu); poza tym w wiÄ™kszosci przypadkÃ³w wÄ…tki komunikowaÅ‚y siÄ™ nieznacznie szybciej.
+WyjÄ…tkowa jest natomiast szybkoÅ›Ä‡ Å‚Ä…cz nazwanych; o ile w przypadku krÃ³tkich komunikatÃ³w (znÃ³w testy 3 i 4 bez dodatkowego komunikatu) fifo wypada gorzej od wÄ…tkÃ³w (choÄ‡ lepiej od pamiÄ™ci dzielonej), to w przypadku duÅ¼ej liczby dÅ‚ugich komunikatÃ³w jest bezkonkurencyjna.
+Czas potrzebny na komunikacjÄ™ jest w przypadku kaÅ¼dej z metod liniowo zaleÅ¼ny od rozmiaru komunikatu - w tym przypadku Å¼aden ze sposobÃ³w komunikacji nie jest faworyzowany.
+PorÃ³wnanie wynikÃ³w testÃ³w 2 i 4 dostarcza nam informacji o tym, jak wpÅ‚ywa zwiÄ™kszenie liczby komunikujÄ…cych siÄ™ procesÃ³w na czas obliczeÅ„. W przypadku wÄ…tkÃ³w i pamiÄ™ci dzielonej ponad dziesiÄ™ciokrotne zwiÄ™kszenie liczby procesÃ³w wydÅ‚uÅ¼yÅ‚o czas obliczeÅ„ zaledwie dwukrotnie; w przypadku fifo takie samo zwiÄ™kszenie liczby procesÃ³w doprowadziÅ‚o do piÄ™ciokrotnego wydÅ‚uÅ¼enia czasu obliczeÅ„.
 
 3. Podsumowanie
 
-zdecydowanym liderem s± ³±cza nazwane, w niektórych jednak przypadkach - w szczególno¶ci du¿ej liczby procesów z kórych ka¿dy wysy³a du¿o krótkich komunikatów - nale¿y rozwa¿yæ u¿ycie w±tków. Kompletnym przegranym jest natomiast pamiêæ dzielona - wypad³a najgorzej we wszystkich testach. Dodatkowo k³opotliwa implementacja tego mechanizmu przemawia za korzystaniem z innych metod komunikacji miêdzy procesami.
+zdecydowanym liderem sÄ… Å‚Ä…cza nazwane, w niektÃ³rych jednak przypadkach - w szczegÃ³lnoÅ›ci duÅ¼ej liczby procesÃ³w z kÃ³rych kaÅ¼dy wysyÅ‚a duÅ¼o krÃ³tkich komunikatÃ³w - naleÅ¼y rozwaÅ¼yÄ‡ uÅ¼ycie wÄ…tkÃ³w. Kompletnym przegranym jest natomiast pamiÄ™Ä‡ dzielona - wypadÅ‚a najgorzej we wszystkich testach. Dodatkowo kÅ‚opotliwa implementacja tego mechanizmu przemawia za korzystaniem z innych metod komunikacji miÄ™dzy procesami.
 
