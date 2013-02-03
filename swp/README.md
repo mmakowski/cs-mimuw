@@ -1,0 +1,1 @@
+The final assignment from Semantics and Verification course. The denotational semantics of a simple object-oriented language, together with an Standard ML interpreter for this language based on said semantics. I remember enjoying typping all these formulae.

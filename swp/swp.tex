@@ -1,0 +1,237 @@
+\documentclass[11pt,a4paper,twoside]{article}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+% \usepackage[latin2]{inputenc}
+% \usepackage[polish]{babel}
+\usepackage{a4wide}
+\usepackage{semantic}
+
+\title{Semantics of simple, object-oriented programming language (soopl)}
+\author{Maciek Makowski}
+
+\begin{document}
+
+\newcommand{\Slet}{\mathsf{let\;}}
+\newcommand{\Sin}{\mathsf{\;in\;}}
+\newcommand{\Sif}{\mathsf{\;if\;}}
+\newcommand{\Sthen}{\mathsf{\;then\;}}
+\newcommand{\Selse}{\mathsf{\;else\;}}
+\newcommand{\Shd}{\mathsf{hd}\,}
+\newcommand{\Stl}{\mathsf{tl}\,}
+\newcommand{\Sappend}{\mathsf{append}\,}
+\newcommand{\Stab}{\mathtt{\;\;\;\;\;\;\;\;\;\;\;\;}}
+\newcommand{\SM}{\mathcal{M}}
+
+\newcommand{\Salloc}{\mathsf{alloc}\,}
+\newcommand{\Smakeenv}{\mathsf{makeenv}\,}
+\newcommand{\Senvcomb}{\mathsf{envcomb}\,}
+\newcommand{\Senvcast}{\mathsf{envcast}\,}
+\newcommand{\Senvidcast}{\mathsf{envidcast}\,}
+\newcommand{\Sinlist}{\mathsf{inlist}\,}
+
+\newcommand{\Sunbound}{\mathrm{unbound}}
+\newcommand{\Sempty}{\mathrm{empty}}
+\newcommand{\Sreturn}{\mathrm{return}}
+\newcommand{\Sself}{\mathrm{self}}
+\newcommand{\Sroot}{\mathrm{Root}}
+
+\maketitle
+
+\section{Abstract syntax}
+$\;$\\
+$Program ::= (ClassMap, Initializer)$\\
+$ClassMap ::= ClassDecl\,list$\\
+$Initializer ::= Expression$\\
+$ClassDecl ::= (Id, ClassBody)$\\
+$Id ::= \mathrm{x_{1}, x_{2}, ...}$\\
+$ClassBody ::= (Superclass, ClassAttributes, ClassMethodMap, Attributes, MethodMap)$\\
+$Superclass ::= Id$\\
+$ClassAttributes ::= Attributes$\\
+$ClassMethodMap ::= MethodMap$\\
+$Attributes ::= Id\,list$\\
+$MethodMap ::= MethodDecl\,list$\\
+$MethodDecl ::= (Id, Arguments, MethodBody)$\\
+$Arguments ::= Id\,list$\\
+$MethodBody ::= Statement\,list$\\
+$Statement ::= Assignment | Return | Evaluation | Execution$\\
+$Assignment ::= (Id, Expression)$\\
+$Return ::= Expression$\\
+$Evaluation ::= Expression$\\
+$Execution ::= Expression$\\
+$Expression ::= Identifier | Constant | BlockDecl | Message | Creation$\\
+$Identifier ::= Id$\\
+$Constant ::= \mathrm{0, 1, 2, ...}$\\
+$BlockDecl ::= Statement\,list$\\
+$Message ::= (Target, Id, ActualArguments)$\\
+$Creation ::= Id$\\
+$Target ::= Expression$\\
+$ActualArguments ::= Expression\,list$\\
+
+\section{Semantic domains}
+\begin{itemize}
+\item Identifiers: $Id = \{x_{1}, x_{2}, ...\}$
+\item Locations: $Loc = \{\alpha_{1}, \alpha_{2}, ...\}$
+\item Environments: $Env = (Id\rightarrow DV_{\bot})$
+\item States: $S = (Loc\rightarrow SV_{\bot})$
+\item Primitive values: $Primitive = \textbf{N}$
+\item Classes: $Class = Loc\times Env\times Env\times Id\,list\times Env$
+\begin{enumerate}
+\item superclass location
+\item class attributes environment
+\item class methods environment
+\item list of object attribute names
+\item object methods environment
+\end{enumerate}
+\item Objects: $Object = Loc\times Env$
+\begin{enumerate}
+\item class location
+\item object attributes environment
+\end{enumerate}
+\item Methods: $Method = [Loc\rightarrow [Env\rightarrow [CExp\rightarrow CSt_{\bot}]]]$
+\begin{enumerate}
+\item object/class location for which the method is being called
+\item local environment
+\item continuation to which the method result is passed
+\item final transformation on states
+\end{enumerate}
+\item Blocks: $Block = Env\times Env\times Env\times (Env\rightarrow Env\rightarrow Env\rightarrow\ CSt\rightarrow CSt)$
+\begin{enumerate}
+\item global environment
+\item attribute/variable environment
+\item method environment
+\item function, which receives these three environments and yields the statement continuation transformation
+\end{enumerate}
+\item Expression continuations: $CExp = [EV\rightarrow CSt_{\bot}]$
+\item Statement continuation: $CSt = [S\rightarrow S_{\bot} + \{\mathrm{error}\}_{\bot}]$
+\item Storable values: $SV = Class + Object + Primitive + Loc + \{\Sempty\}$
+\item Denotable values: $DV = Loc + CExp + Method\times Id\,list + \{\Sunbound\}$
+\item Expressable values: $EV = Loc + Primitive$
+\end{itemize}
+\section{Miscellaneous operations}
+\begin{itemize}
+\item Obtaining the list's head: $\Shd: \alpha\,list\rightarrow\alpha$
+\item Obtaining the list's tail: $\Stl: \alpha\,list\rightarrow\alpha\,list$
+\item Concatenating two lists: $\Sappend: \alpha\,list\rightarrow\alpha\,list\rightarrow\alpha\,list$
+\item Checking if element is in list: $\Sinlist: \alpha\rightarrow \alpha\,list\rightarrow Boolean$
+\item Memory allocation: $\Salloc: S\rightarrow Loc\times S$
+\item Creating the environment based on identifier list: $\Smakeenv: Id\,list\rightarrow S\rightarrow Env\times S$\\
+$\Smakeenv = \lambda idl\in Id\,list.\lambda s\in S.\\\Stab\Sif idl = [] \Sthen (\lambda id\in Id.\Sunbound, s)\\\Stab\Selse\Slet (l, s') = \Salloc\,s \Sin\\\Stab\Stab\Slet (\rho', s'') = \Smakeenv\,(\Stl\,idl)\,s' \Sin\\\Stab\Stab\Stab(\rho'[l/\Shd\,idl], s'')$
+\item Narrowing the environment so that only identifiers bound in second environment are bound in the resulting environment: $\Senvcast: Env\rightarrow Env\rightarrow Env$\\
+$\Senvcast = \lambda\rho_{1}\in Env.\lambda\rho_{2}\in Env.\\\Stab\lambda id\in Id.\Sif \rho_{2}\,id = \Sunbound \Sthen \Sunbound\\\Stab\Stab\Selse\rho_{1}\,id$
+\item Narrowing the environment so that only identifiers that are in the identifier list are bound in the resulting environment: $\Senvidcast: Env\rightarrow Id\,list\rightarrow Env$\\
+$\Senvidcast = \lambda\rho\in Env.\lambda idl\in Id\,list.\\\Stab\lambda id\in Id.\Sif \Sinlist id\,idl \Sthen \rho\,id\\\Stab\Stab\Selse\Sunbound$
+\item Composition of two environments: $\Senvcomb: Env\rightarrow Env\rightarrow Env$\\
+$\Senvcomb = \lambda\rho_{1}\in Env.\lambda\rho_{2}\in Env.\\\Stab\lambda id\in Id.\Sif \rho_{2}\,id = \Sunbound \Sthen \rho_{1}\,id\\\Stab\Stab\Selse\rho_{2}\,id$
+\end{itemize}
+
+\section{Additional assumptions}
+In the initial environment identifier $\Sroot$ is bound to location $\alpha_{r}$. In the initial state in location $\alpha_{r}$ there is a class: $(\alpha_{r}, \lambda id\in Id.\Sunbound, \lambda id\in Id.\Sunbound, [], \lambda id\in Id.\Sunbound)$. This is the root class of the whole inheritance tree.
+
+\section{Semantic functions}
+$\;$\\
+$\SM Program: Program\rightarrow Env\rightarrow S\rightarrow Env\times S$\\
+$\SM ClassMap: ClassMap\rightarrow Env\rightarrow S\rightarrow Env\times S$\\
+$\SM Initializer: Initializer\rightarrow Env\rightarrow S\rightarrow S$\\
+$\SM ClassDecl: ClassDecl\rightarrow Env\rightarrow S\rightarrow Env\times S$\\
+$\SM ClassBody: ClassBody\rightarrow Env\rightarrow S\rightarrow Loc\times S$\\
+$\SM ClMethodMap: MethodMap\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow S\rightarrow Env$\\
+$\SM ClMethodDecl: MethodDecl\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow S\rightarrow Env$\\
+$\SM MethodMap: MethodMap\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow Id\,list\rightarrow Env\rightarrow S\rightarrow Env$\\
+$\SM MethodDecl: MethodDecl\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow Id\,list\rightarrow Env\rightarrow S\rightarrow Env$\\
+$\SM MethodBody: MethodBody\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow CSt$\\
+$\SM Statement: Statement\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow CSt\rightarrow CSt$\\
+$\SM StatementList: Statement\,list\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow CSt\rightarrow CSt$\\
+$\SM Expression: Expression\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow CExp\rightarrow CSt$\\
+$\SM Arguments: ActualArguments\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow Env\rightarrow Id\,list\rightarrow S\rightarrow S$\\
+
+\section{Semantic equations}
+
+% MProgram
+\paragraph{Program:} process the class map and then evaluate the initializer in resulting environment and state.\\\\
+$\SM Program|[mkProgram(clm, init)|] = \lambda\rho\in Env.\lambda s\in S.\\\Stab\Slet (\rho', s') = \SM ClassMap|[clm|]\,\rho\,s \Sin (\rho', \SM Initializer|[init|]\,\rho'\,s')\\$
+
+% MClassMap
+\paragraph{Class map:} process all the class declarations in the list, each one in environment/state resulting from previous declaration.\\\\
+$\SM ClassMap|[mkClassMap([])|] = \lambda\rho\in Env.\lambda s\in S.(\rho, s)$\\
+$\SM ClassMap|[mkClassMap(cdl)|] = \lambda\rho\in Env.\lambda s\in S.\\\Stab\Slet (\rho', s') = \SM ClassDecl|[\Shd cdl|]\,\rho\,s \Sin \SM ClassMap|[mkClassMap(\Stl cdl)|]\,\rho'\,s'\\$
+
+% MInitializer
+\paragraph{Initializer:} treat the initializer as evaluation of the expression where attribute and method environments are empty and the statement continuation is identity.\\\\
+$\SM Initializer|[mkInitializer(exp)|] = \lambda\rho\in Env.\lambda s\in S.\\\Stab\SM Statement|[mkEvaluation(exp)|]\,\rho\,\\\Stab\Stab\Stab\Stab(\lambda id\in Id.\Sunbound)\,(\lambda id\in Id.\Sunbound)\,(\lambda s\in S.s)\,s\\$
+
+% MClassDecl
+\paragraph{Class declaration:} process the class body and bind the identifier to the location where the class is placed.\\\\
+$\SM ClassDecl|[mkClassDecl(id, cb)|] = \lambda\rho\in Env.\lambda s\in S.\\\Stab\Slet (l, s') = \SM ClassBody|[cb|]\,\rho\,s \Sin (\rho[l/id], s')\\$
+
+% MClassBody
+\paragraph{Class body:} find the superclass for the class being processed and:\\
+$\bullet$ create the class attribute environment and combine the superclass' attribute environment with it\\
+$\bullet$ process the class method map\\
+$\bullet$ append the object attribute identifier list to the superclass' object attribute identifier list\\
+$\bullet$ process the object method map\\
+after that, allocate memory for the class and put the class in the allocated location.\\\\
+$\SM ClassBody|[mkClassBody(id, catr, cmm, atr, mm)|] = \lambda\rho\in Env.\lambda s\in S.\\\Stab\Slet mkClass(p, \rho_{ca}, \rho_{cm}, al, \rho_{m}) = s\,(\rho\,id) \Sin\\\Stab\Stab\Slet (\rho_{ca}', s') = \Smakeenv catr\,s \Sin\\\Stab\Stab\Stab\Slet \rho_{ca}'' = \Senvcomb \rho_{ca}\,\rho_{ca}' \Sin \\\Stab\Stab\Stab\Stab\Slet \rho_{cm}' = \SM ClMethodMap|[cmm|]\,\rho\,\rho_{ca}''\,\rho_{cm}\,s' \\\Stab\Stab\Stab\Stab\Stab al' = \Sappend atr\,al \Sin \\\Stab\Stab\Stab\Stab\Stab\Slet \rho_{m}' = \SM MethodMap|[mm|]\,\rho\,\rho_{ca}''\,\rho_{cm}'\,al'\,\rho_{m}\,s'\\\Stab\Stab\Stab\Stab\Stab\Stab (l, s'') = \Salloc s' \Sin \\\Stab\Stab\Stab\Stab\Stab\Stab\Stab (l, s''[mkClass(\rho\,id, \rho_{ca}'', \rho_{cm}', al', \rho_{m}')/l])\\$
+
+% MClMethodMap
+\paragraph{Class method map:} process the class method declarations in the list, each one using class method environment resulting from previous declarations.\\\\
+$\SM ClMethodMap|[mkMethodMap([])|] = \lambda\rho\in Env.\lambda\rho_{ca}\in Env.\lambda\rho_{cm}\in Env.\lambda s\in S.\rho_{cm}$\\
+$\SM ClMethodMap|[mkMethodMap(mdl)|] = \lambda\rho\in Env.\lambda\rho_{ca}\in Env.\lambda\rho_{cm}\in Env.\lambda s\in S.\\\Stab\SM ClMethodMap|[mkMethodMap(\Stl mdl)|]\,\rho\,\rho_{ca}\,(\SM ClMethodDecl|[\Shd mdl|]\,\rho\,\rho_{ca}\,\rho_{cm}\,s)\,s\\$
+
+% MClMethodDecl
+\paragraph{Class method declaration:} construct the operator $F$ that takes method $m$ as an argument, processes method body combining narrowed class attribute environment with local method environment (containing method arguments), narrowing the class method environment and binding the id of declared method to $m$ in this environment. Then compute the fixpoint of $F$ and bind the id of declared method to this fixpoint. Note the narrowing, which ensures, that only the identifiers bound in the environments of the class in which the method is declared are accessible to the method.\\\\
+$\SM ClMethodDecl|[mkMethodDecl(id, args, mb)|] = \lambda\rho\in Env.\lambda\rho_{ca}\in Env.\lambda\rho_{cm}\in Env.\\\Stab\lambda s\in S.\\\Stab\Stab\Slet F = \lambda m\in Method.\lambda t\in Loc.\lambda\rho_{loc}\in Env.\lambda k\in CExpr.\lambda s\in S.\\\Stab\Stab\Stab\Slet mkClass(p, \rho_{ca}', \rho_{cm}', al, \rho_{m}) = s\,t \Sin\\\Stab\Stab\Stab\Stab \SM MethodBody|[mb|]\,\rho\\\Stab\Stab\Stab\Stab\Stab (\Senvcomb\,(\Senvcast\,\rho_{ca}'\,\rho_{ca})\,\rho_{loc}[k/\Sreturn][t/\Sself])\\\Stab\Stab\Stab\Stab\Stab (\Senvcast\,\rho_{cm}'\,\rho_{cm})[m/id]\,s\\\Stab\Stab\Sin\rho_{cm}[(fix\,F, args)/id]\\$
+
+% MMethodMap
+\paragraph{Object method map:} process the object method declarations in the list, each one using object method environment resulting from previous declarations.\\\\
+$\SM MethodMap|[mkMethodMap([])|] = \lambda\rho\in Env.\lambda\rho_{ca}\in Env.\lambda\rho_{cm}\in Env.\lambda al\in Id\,list.\\\Stab\lambda\rho_{m}\in Env.\lambda s\in S.\rho_{m}$\\
+$\SM MethodMap|[mkMethodMap(mdl)|] = \lambda\rho\in Env.\lambda\rho_{ca}\in Env.\lambda\rho_{cm}\in Env.\\\Stab\lambda al\in Id\,list.\lambda\rho_{m}\in Env.\lambda s\in S.\\\Stab\Stab\SM MethodMap|[mkMethodMap(\Stl mdl)|]\,\rho\,\rho_{ca}\,\rho_{cm}\,al\\\Stab\Stab\Stab(\SM MethodDecl|[\Shd mdl|]\,\rho\,\rho_{ca}\,\rho_{cm}\,al\,\rho_{m}\,s)\,s\\$
+
+% MMethodDecl
+\paragraph{Object method declaration:} construct the operator $F$ that takes method $m$ as an argument, processes method body combining narrowed object attribute environment with local method environment (containing method arguments), narrowing the object method environment and binding the id of declared method to $m$ in this environment. Then compute the fixpoint of $F$ and bind the id of declared method to this fixpoint. Narrowing works the same way as with class method declaration.\\\\
+$\SM MethodDecl|[mkMethodDecl(id, args, mb)|] = \lambda\rho\in Env.\lambda\rho_{ca}\in Env.\lambda\rho_{cm}\in Env.\\\Stab\lambda al\in Id\,list.\lambda\rho_{m}\in Env.\lambda s\in S.\\\Stab\Stab\Slet F = \lambda m\in Method.\lambda t\in Loc.\lambda\rho_{loc}\in Env.\lambda k\in CExp.\lambda s\in S.\\\Stab\Stab\Stab\Slet mkObject(c, \rho_{a}) = s\,t \Sin\\\Stab\Stab\Stab\Stab\Slet mkClass(p, \rho_{ca}', \rho_{cm}', al', \rho_{m}') = s\,c \Sin\\\Stab\Stab\Stab\Stab\Stab\SM MethodBody|[mb|]\,\rho\\\Stab\Stab\Stab\Stab\Stab\Stab(\Senvcomb\,(\Senvidcast\,\rho_{a}\,al)\,\rho_{loc}[k/\Sreturn][t/\Sself])\\\Stab\Stab\Stab\Stab\Stab\Stab(\Senvcast\,\rho_{m}'\,\rho_{m})[m/id]\,s\\\Stab\Stab\Sin \rho_{m}[(fix\,F, args)/id]\\$
+
+% MMethodBody
+\paragraph{Method body:} process the statements in the list, each one with statement continuation resulting from \emph{following} statements; at the end of the list put the continuation that takes the expression continuation bound to identifier $\Sreturn$ in the attribute environment and passes to it the location bound to $\Sself$ in this environment. Thanks to this, each method that doesn't explicitely return something, will return the class/object it was called for (like in Smalltalk).\\\\
+$\SM MethodBody|[mkMethodBody([])|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\\\Stab\lambda s\in S.(\rho_{a}\,\Sreturn)\,(\rho_{a}\,\Sself)\,s$\\
+$\SM MethodBody|[mkMethodBody(stl)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\\\Stab\SM Statement|[\Shd stl|]\,\rho\,\rho_{a}\,\rho_{m}\,(\SM MethodBody|[mkMethodBody(\Stl stl)|]\,\rho\,\rho_{a}\,\rho_{m})\\$
+
+% MStatement
+\paragraph{Assignment:} evaluate the expression with expression continuation that puts given value under location bound to id in the attribute environment.\\\\
+$\SM Statement|[mkAssignment(id, exp)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CSt.\\\Stab\SM Expression|[exp|]\,\rho\,\rho_{a}\,\rho_{m}\,(\lambda v\in EV.\lambda s\in S.k\,s[v/\rho_{a}\,id])$
+\paragraph{Return:} evaluate the expression with expression continuation that passes given value to the expression continuation bound to $\Sreturn$ in the attribute environment.\\\\
+$\SM Statement|[mkReturn(exp)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CSt.\\\Stab\SM Expression|[exp|]\,\rho\,\rho_{a}\,\rho_{m}\,(\lambda v\in EV.\lambda s\in S.\rho_{a}\,\Sreturn\,v\,s)$
+\paragraph{Evaluation:} evaluate the expression with expression continuation that discards the given value (only the side-effects will count).\\\\
+$\SM Statement|[mkEvaluation(exp)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CSt.\\\Stab\SM Expression|[exp|]\,\rho\,\rho_{a}\,\rho_{m}\,(\lambda v\in EV.k)$
+\paragraph{Execution:} evaluate the expression with expression continuation that receives a location of a block and then executes the block in saved environments.\\\\
+$\SM Statement|[mkExecution(exp)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CSt.\\\Stab\SM Expression|[exp|]\,\rho\,\rho_{a}\,\rho_{m}\,(\lambda v\in EV.\lambda s\in S.\\\Stab\Stab\Slet mkBlock(\rho, \rho_{a}, \rho_{m}, bl) = s\,v\Sin\\\Stab\Stab\Stab bl\,\rho\,\rho_{a}\,\rho_{m}\,k\,s)\\$
+
+% MStatementList
+\paragraph{Statememt list:} process all the statements in the list, each with statement continuation resulting from \emph{following} statements (very similar to method body).\\\\
+$\SM StatementList|[[]|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CSt.k$\\
+$\SM StatementList|[stl|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CSt.\\\Stab\SM Statement|[\Shd stl|]\,\rho\,\rho_{a}\,\rho_{m}\,(\SM StatementList|[\Stl stl|]\,\rho\,\rho_{a}\,\rho_{m}\,k)\\$
+
+% MExpression
+\paragraph{Identifier:} if given id is unbound in the attribute environment then get the value bound to this id in the global environment, otherwise get the value bound to it in the attribute environment; pass the value to given expression continuation.\\\\
+$\SM Expression|[mkIdentifier(id)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CExp.\\\Stab\lambda s\in S.\Sif \rho_{a}\,id = \Sunbound \Sthen k\,(\rho\,id)\,s \Selse k\,(s\,(\rho_{a}\,id))\,s$
+\paragraph{Constant:} pass the constant value to given expression continuation.\\\\
+$\SM Expression|[mkConstant(n)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CExp.k\,n$
+\paragraph{Block declaration:} allocate memory for the block, process the statement list that constitutes the block and put the result in allocated location together with current environments; pass the block location to given expression continuation.\\\\
+$\SM Expression|[mkBlockDecl(stl)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CExp.\\\Stab\lambda s\in S.\Slet (l, s') = \Salloc\,s \Sin\\\Stab\Stab k\,l\,s'[mkBlock(\rho, \rho_{a}, \rho_{m}, \lambda \rho\in Env.\lambda \rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CSt.\\\Stab\Stab\Stab\Stab\Stab\Stab\SM StatementList|[stl|]\,\rho\,\rho_{a}\,\rho_{m}\,k)/l]$
+\paragraph{Message:} first evaluate the \emph{target} expression; then:\\
+$\bullet$ determine if the target is object or class\\
+$\bullet$ find the method using target's method environment\\
+$\bullet$ create local variable environment from the method argument identifier list\\
+$\bullet$ combine the target attribute environment with it\\
+$\bullet$ process the arguments\\
+finally, call the method passing target location, local environment, given expression continuation and the state resulting from processing method arguments.\\\\
+$\SM Expression|[mkMessage(exp, id, args)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\\\Stab\lambda k\in CExp.\\\Stab\SM Expression|[exp|]\,\rho\,\rho_{a}\,\rho_{m}\,(\lambda t\in Loc.\lambda s\in S.\\\Stab\Stab\Sif s\,t\in Object \Sthen\\\Stab\Stab\Stab\Slet mkObject(c, \rho_{a}') = s\,t \Sin\\\Stab\Stab\Stab\Stab\Slet mkClass(p, \rho_{ca}, \rho_{cm}, al, \rho_{m}') = s\,c \Sin\\\Stab\Stab\Stab\Stab\Stab\Slet (m, ids) = \rho_{m}'\,id \Sin\\\Stab\Stab\Stab\Stab\Stab\Stab\Slet (\rho_{loc}, s') = \Smakeenv\,ids\,s \Sin\\\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Slet \rho_{loc} = \Senvcomb\,\rho_{a}'\,\rho_{loc} \Sin\\\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Slet s'' = \SM Arguments|[args|]\\\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab\rho\,\rho_{a}\,\rho_{m}\,\rho_{loc}\,ids\,s' \Sin\\\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab m\,t\,\rho_{loc}\,k\,s''\\\Stab\Stab\Selse\\\Stab\Stab\Stab\Slet mkClass(p, \rho_{ca}, \rho_{cm}, al, \rho_{m}') = s\,t \Sin\\\Stab\Stab\Stab\Stab\Slet (m, ids) = \rho_{cm}\,id \Sin\\\Stab\Stab\Stab\Stab\Stab\Slet (\rho_{loc}, s') = \Smakeenv\,ids\,s \Sin\\\Stab\Stab\Stab\Stab\Stab\Stab\Slet \rho_{loc} = \Senvcomb\,\rho_{a}'\,\rho_{loc} \Sin\\\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Slet s'' = \SM Arguments|[args|]\\\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab\rho\,\rho_{a}\,\rho_{m}\,\rho_{loc}\,ids\,s' \Sin\\\Stab\Stab\Stab\Stab\Stab\Stab\Stab\Stab m\,t\,\rho_{loc}\,k\,s'')$
+\paragraph{Creation:} find the class bound to id, create the object attribute environment using the id list in the class, allocate memory for the object and put a new object into resulting location; pass the object location to given expression continuation.\\\\
+$\SM Expression|[mkCreation(id)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda k\in CExp.\\\Stab\lambda s\in S.\Slet (l, s') = \Salloc\,s \Sin\\\Stab\Stab\Slet mkClass(p, \rho_{ca}, \rho_{cm}, al, \rho_{m}') = s'\,(\rho\,id) \Sin\\\Stab\Stab\Stab\Slet (\rho_{a}, s'') = \Smakeenv\,al\,s' \Sin\\\Stab\Stab\Stab\Stab k\,l\,s''[mkObject(\rho\,id, \rho_{a})/l]\\$
+
+% MArguments
+\paragraph{Arguments:} evaluate each expression in the expression list with the expression continuation that puts given value under the location bound to the next identifier in the argument id list. If there are more expressions than argument identifiers, don't evaluate the surplus expressions.\\\\
+$\SM Arguments|[mkArguments([])|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda\rho_{loc}\in Env.\\\Stab\lambda ids\in Id\,list.\lambda s\in S.s$\\
+$\SM Arguments|[mkArguments(expl)|] = \lambda\rho\in Env.\lambda\rho_{a}\in Env.\lambda\rho_{m}\in Env.\lambda\rho_{loc}\in Env.\\\Stab\lambda ids\in Id\,list.\\\Stab\Stab\Sif ids = [] \Sthen \lambda s\in S.s\\\Stab\Stab\Selse\Slet k = \SM Arguments|[mkArguments(\Stl expl)|]\,\rho\,\rho_{a}\,\rho_{m}\,\rho_{loc}\,(\Stl ids) \Sin\\\Stab\Stab\Stab\SM Expression|[\Shd expl|]\,\rho\,\rho_{a}\,\rho_{m}\,(\lambda v\in EV.\lambda s\in S.k\,s[v/\rho_{loc}\,(\Shd ids)])\\$
+\end{document}
+
+
