@@ -15,12 +15,12 @@
 
 
 void sp_uruchomienieProcesow(int ile, 
-			     int kolSys,
-			     int semStart,
-			     int dlugoscLiczby,
-			     int ileLiczb,
-			     int dlugoscKom,
-			     char **liczby)
+                             int kolSys,
+                             int semStart,
+                             int dlugoscLiczby,
+                             int ileLiczb,
+                             int dlugoscKom,
+                             char **liczby)
 {
   int i, j;
   pid_t pid;
@@ -42,18 +42,18 @@ void sp_uruchomienieProcesow(int ile,
     sprintf(numer, "%d", i);
     for (j = 0; j < ileLiczb; j++)
       if (i < dlugoscLiczby)
-	paczka[j] = liczby[j][dlugoscLiczby - i - 1];
+        paczka[j] = liczby[j][dlugoscLiczby - i - 1];
       else
-	paczka[j] = '0';
+        paczka[j] = '0';
 
     switch (pid = fork()) {
       case -1:
-	syserr("fork");
+        syserr("fork");
       case 0:
-	execlp("./obliczeniowy_fifo", "obliczeniowy_fifo", numer, ileProc, maxPrzen, dlKom, paczka, 0);
-	syserr("execlp");
+        execlp("./obliczeniowy_fifo", "obliczeniowy_fifo", numer, ileProc, maxPrzen, dlKom, paczka, 0);
+        syserr("execlp");
       default:
-	break;
+        break;
     }
     if (msgrcv(kolSys, &kom, KK_DANE_SYS, KSYS_START, 0) == -1)
       syserr("msgrcv (KSYS_START)");

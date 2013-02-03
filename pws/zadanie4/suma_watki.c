@@ -134,36 +134,36 @@ void *proces(void *dane)
     while (ilePrz < dp->ileLiczb) {
       MUTEX_LOCK(dp->prawy->zajete);
       if (dp->prawy->nowe != PR_JEST){
-	TRACE("czeka na przeniesienie");
-	COND_WAIT(dp->prawy->saNowe, dp->prawy->zajete);}
+        TRACE("czeka na przeniesienie");
+        COND_WAIT(dp->prawy->saNowe, dp->prawy->zajete);}
       TRACE("odbiera przeniesienie");
       dp->prawy->nowe = PR_NIEMA;
       for (i = 0; i < dp->ileLiczb; i++)
-	if (dp->prawy->bufor[i] != PR_NIEMA) {
-	  suma(dp->prawy->bufor[i], bufor[i]);
-	  dp->prawy->bufor[i] = PR_NIEMA;
-	  doWyslania[i] += PR_NOWE;
-	  ilePrz++;
-	  KOM_KOPIUJ
-	}
+        if (dp->prawy->bufor[i] != PR_NIEMA) {
+          suma(dp->prawy->bufor[i], bufor[i]);
+          dp->prawy->bufor[i] = PR_NIEMA;
+          doWyslania[i] += PR_NOWE;
+          ilePrz++;
+          KOM_KOPIUJ
+        }
       MUTEX_UNLOCK(dp->prawy->zajete);
       if (dp->lewy != KOM_BRAK) {
-	for (i = 0; i < dp->ileLiczb; i++)
-	  if (doWyslania[i] == PR_WYSLIJTERAZ) {
-	    MUTEX_LOCK(dp->lewy->zajete);
-	    MALLOC(dp->lewy->bufor[i], dp->maxPrzen + 1);
-	    dp->lewy->bufor[i][0] = '0';
-	    for (j = 0; j < dp->maxPrzen; j++)
-	      dp->lewy->bufor[i][j + 1] = bufor[i][j];
-	    dp->lewy->bufor[i][dp->maxPrzen] = '\0';
-	    dp->lewy->nowe = PR_JEST;
-	    if (dp->dlKom > 0)
-	      MALLOC(dp->lewy->komunikat[i], dp->dlKom);
-	    TRACE("wyslal przeniesienie");
-	    COND_SIGNAL(dp->lewy->saNowe);
-	    MUTEX_UNLOCK(dp->lewy->zajete);
-	    doWyslania[i] = PR_WYSLANE;
-	  }
+        for (i = 0; i < dp->ileLiczb; i++)
+          if (doWyslania[i] == PR_WYSLIJTERAZ) {
+            MUTEX_LOCK(dp->lewy->zajete);
+            MALLOC(dp->lewy->bufor[i], dp->maxPrzen + 1);
+            dp->lewy->bufor[i][0] = '0';
+            for (j = 0; j < dp->maxPrzen; j++)
+              dp->lewy->bufor[i][j + 1] = bufor[i][j];
+            dp->lewy->bufor[i][dp->maxPrzen] = '\0';
+            dp->lewy->nowe = PR_JEST;
+            if (dp->dlKom > 0)
+              MALLOC(dp->lewy->komunikat[i], dp->dlKom);
+            TRACE("wyslal przeniesienie");
+            COND_SIGNAL(dp->lewy->saNowe);
+            MUTEX_UNLOCK(dp->lewy->zajete);
+            doWyslania[i] = PR_WYSLANE;
+          }
       }
     }
   } else {
@@ -173,11 +173,11 @@ void *proces(void *dane)
       MALLOC(dp->lewy->bufor[i], dp->maxPrzen + 1);
       dp->lewy->bufor[i][0] = '0';
       for (j = 0; j < dp->maxPrzen; j++)
-	dp->lewy->bufor[i][j + 1] = bufor[i][j];
+        dp->lewy->bufor[i][j + 1] = bufor[i][j];
       dp->lewy->bufor[i][dp->maxPrzen] = '\0';
       dp->lewy->nowe = PR_JEST;
       if (dp->dlKom > 0)
-	MALLOC(dp->lewy->komunikat[i], dp->dlKom);
+        MALLOC(dp->lewy->komunikat[i], dp->dlKom);
       TRACE("wyslal przeniesienie (1)");
       COND_SIGNAL(dp->lewy->saNowe);
       MUTEX_UNLOCK(dp->lewy->zajete);
@@ -193,14 +193,14 @@ void *proces(void *dane)
 
 
 void sp_uruchomienieProcesow(int ile, 
-			     sp_proces_t **procesy,
-			     char ***wynik,
-			     int dlugoscLiczby,
-			     int ileLiczb,
-			     int dlugoscKom,
-			     char **liczby,
-			     pthread_mutex_t *glob,
-			     pthread_cond_t *start)
+                             sp_proces_t **procesy,
+                             char ***wynik,
+                             int dlugoscLiczby,
+                             int ileLiczb,
+                             int dlugoscKom,
+                             char **liczby,
+                             pthread_mutex_t *glob,
+                             pthread_cond_t *start)
 {
   int i, j;
   int blad;
@@ -225,10 +225,10 @@ void sp_uruchomienieProcesow(int ile,
     MALLOC((*wynik)[i], ileLiczb);
     if (i < dlugoscLiczby)
       for (j = 0; j < ileLiczb; j++)
-	(*wynik)[i][j] = liczby[j][dlugoscLiczby - i - 1];
+        (*wynik)[i][j] = liczby[j][dlugoscLiczby - i - 1];
     else
       for (j = 0; j < ileLiczb; j++)
-	(*wynik)[i][j] = '0';
+        (*wynik)[i][j] = '0';
       
     dp->cyfry = (*wynik)[i];
     dp->glob = glob;

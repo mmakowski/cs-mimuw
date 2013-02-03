@@ -60,7 +60,7 @@ int main(int argc, char **argv)
       fstat(plik, &atrPliku);
       ileBlokow = (long)((double)atrPliku.st_size / (double)ROZMIAR_BLOKU);
       if (((double)atrPliku.st_size / (double)ROZMIAR_BLOKU) > (double)ileBlokow)
-	ileBlokow++;
+        ileBlokow++;
     }
     sprintf(komSystem.dane, "%ld", ileBlokow);
     komSystem.typ = KS_LIMIT;
@@ -77,30 +77,30 @@ int main(int argc, char **argv)
      * instrukcji.                                                     */
     switch (komSystem.typ) {
       case KS_GIN:
-	if (msgsnd(kolSys, &komSystem, 0, 0) == -1)
-	  syserr("msgsnd (kolSys: GIN)");
-	koncz = 1;
-	break;
+        if (msgsnd(kolSys, &komSystem, 0, 0) == -1)
+          syserr("msgsnd (kolSys: GIN)");
+        koncz = 1;
+        break;
       case KS_ODBIERZ:
-	if (msgrcv(kolCzyt, &komSynchro, 0, 0L, 0) == -1)
-	  syserr("msgrcv (kolCzyt)");
-	nrBloku = komSynchro.typ;
-	if ((dlugosc = wczytajBlok(plik, nrBloku, &komBlok)) == 0) {
-	  komSystem.typ = KS_KONIEC;
-	  if (msgsnd(kolSys, &komSystem, 0, 0) == -1)
-	    syserr("msgsnd (kolSys: KONIEC)");
-	} else {
-	  if (msgrcv(kolPisz, &komSynchro, 0, nrBloku, 0) == -1)
-	    syserr("msgrcv (kolPisz)");
-	  if (msgsnd(kolCat, &komBlok, dlugosc, 0) == -1)
-	    syserr("msgsnd (kolCat)");
-	  komSynchro.typ++;
-	  if (msgsnd(kolPisz, &komSynchro, 0, 0) == -1)
-	    syserr("msgsnd (kolPisz)");
-	}
-	break;
+        if (msgrcv(kolCzyt, &komSynchro, 0, 0L, 0) == -1)
+          syserr("msgrcv (kolCzyt)");
+        nrBloku = komSynchro.typ;
+        if ((dlugosc = wczytajBlok(plik, nrBloku, &komBlok)) == 0) {
+          komSystem.typ = KS_KONIEC;
+          if (msgsnd(kolSys, &komSystem, 0, 0) == -1)
+            syserr("msgsnd (kolSys: KONIEC)");
+        } else {
+          if (msgrcv(kolPisz, &komSynchro, 0, nrBloku, 0) == -1)
+            syserr("msgrcv (kolPisz)");
+          if (msgsnd(kolCat, &komBlok, dlugosc, 0) == -1)
+            syserr("msgsnd (kolCat)");
+          komSynchro.typ++;
+          if (msgsnd(kolPisz, &komSynchro, 0, 0) == -1)
+            syserr("msgsnd (kolPisz)");
+        }
+        break;
       default:
-	break;
+        break;
     }
   }
   

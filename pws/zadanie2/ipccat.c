@@ -71,11 +71,11 @@ int main(int argc, char **argv)
   for (i = 0; i < ileAg; i++)
     switch (pid = fork()) {
       case -1:
-	rmsyserr(kol, "fork");
+        rmsyserr(kol, "fork");
 
       case 0:
-	execlp("./ipccatagent", "ipccatagent", argv[2], 0);
-	rmsyserr(kol, "exec");
+        execlp("./ipccatagent", "ipccatagent", argv[2], 0);
+        rmsyserr(kol, "exec");
 
       default:
         break;
@@ -95,22 +95,22 @@ int main(int argc, char **argv)
     for (j = 1; j <= MIN(ileBlokow, ileAg); j++) {
       komSynchro.typ = (long)j;
       if (msgsnd(kol[CZYT], &komSynchro, 0, 0) != 0)
-	rmsyserr(kol, "msgsnd (kolCzyt)");
+        rmsyserr(kol, "msgsnd (kolCzyt)");
       if (msgsnd(kol[SYS], &komSystem, 0, 0) != 0)
-	rmsyserr(kol, "msgsnd (kolSys: ODBIERZ)");
+        rmsyserr(kol, "msgsnd (kolSys: ODBIERZ)");
     }
 
     /* wczytywanie po kolei blokow z kolCat                           */
     for (i = 1; i <= ileBlokow; i++) {
       if ((dlugosc = msgrcv(kol[CAT], &komBlok, ROZMIAR_BLOKU, 0L, 0)) <= 0)
-	rmsyserr(kol, "msgrcv (kolCat)");
+        rmsyserr(kol, "msgrcv (kolCat)");
       write(1, komBlok.dane, dlugosc);
       if (j + i - 1 <= ileBlokow) {
-	komSynchro.typ = j + i - 1;
-	if (msgsnd(kol[CZYT], &komSynchro, 0, 0) != 0)
-	  rmsyserr(kol, "msgsnd (kolCzyt)");
-	if (msgsnd(kol[SYS], &komSystem, 0, 0) != 0)
-	  rmsyserr(kol, "msgsnd (kolSys: ODBIERZ)");
+        komSynchro.typ = j + i - 1;
+        if (msgsnd(kol[CZYT], &komSynchro, 0, 0) != 0)
+          rmsyserr(kol, "msgsnd (kolCzyt)");
+        if (msgsnd(kol[SYS], &komSystem, 0, 0) != 0)
+          rmsyserr(kol, "msgsnd (kolSys: ODBIERZ)");
       }
     }
   } else

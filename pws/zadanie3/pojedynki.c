@@ -106,31 +106,31 @@ void *proces(void *dane)
       *(info.wartosc) = wartosc;
       COND_WAIT(info.moznaWalczyc, info.walka);
       if (*(info.wartosc) != KONIEC) {
-	if (*(info.wartosc) < wartosc)
-	  zwyciestwa++;
-	else if (*(info.wartosc) == wartosc && info.grupa == A)
-	  zwyciestwa++;
-	*(info.wartosc) = WOLNE;
-	COND_SIGNAL(info.moznaWalczyc);
-	MUTEX_UNLOCK(info.walka);
-	MUTEX_LOCK(info.miejsce);
-	++*(info.wolne);
-	COND_SIGNAL(info.jestMiejsce);
-	MUTEX_UNLOCK(info.miejsce);
+        if (*(info.wartosc) < wartosc)
+          zwyciestwa++;
+        else if (*(info.wartosc) == wartosc && info.grupa == A)
+          zwyciestwa++;
+        *(info.wartosc) = WOLNE;
+        COND_SIGNAL(info.moznaWalczyc);
+        MUTEX_UNLOCK(info.walka);
+        MUTEX_LOCK(info.miejsce);
+        ++*(info.wolne);
+        COND_SIGNAL(info.jestMiejsce);
+        MUTEX_UNLOCK(info.miejsce);
       } else
-	MUTEX_UNLOCK(info.walka);
+        MUTEX_UNLOCK(info.walka);
     } else if (*(info.wartosc) == KONIEC) {
       MUTEX_UNLOCK(info.walka);
     } else {
       MUTEX_LOCK(info.miejsce);
       if (*(info.wolne) == 0)
-	COND_WAIT(info.jestMiejsce, info.miejsce);
+        COND_WAIT(info.jestMiejsce, info.miejsce);
       --*(info.wolne);
       MUTEX_UNLOCK(info.miejsce);
       if (*(info.wartosc) < wartosc)
-	zwyciestwa++;
+        zwyciestwa++;
       else if (*(info.wartosc) == wartosc && info.grupa == A)
-	zwyciestwa++;
+        zwyciestwa++;
       *(info.wartosc) = wartosc;
       COND_SIGNAL(info.moznaWalczyc);
       COND_WAIT(info.moznaWalczyc, info.walka);

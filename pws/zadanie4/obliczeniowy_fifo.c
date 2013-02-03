@@ -95,16 +95,16 @@ int main(int argc, char **argv)
   if (numer > 0) {
     for (i = 0; i < ileLiczb; i++) {
       if (i < ileLiczb - 1)
-	suma(bufor[i], bufor[i + 1]);
+        suma(bufor[i], bufor[i + 1]);
       if (read(fifoPD, msgP, maxPrzen + 1 + rozmKom) == -1)
-	syserr("read (fifoPD)");
+        syserr("read (fifoPD)");
       suma(msgP, bufor[i]);
       if (numer < maxProc) {
-	for (j = 0; j < maxPrzen - 1; j++)
-	  msgL[j + 1] = bufor[i][j];
-	msgL[maxPrzen] = 0;
-	if(write(fifoLD, msgL, maxPrzen + 1 + rozmKom) == -1)
-	  syserr("write");
+        for (j = 0; j < maxPrzen - 1; j++)
+          msgL[j + 1] = bufor[i][j];
+        msgL[maxPrzen] = 0;
+        if(write(fifoLD, msgL, maxPrzen + 1 + rozmKom) == -1)
+          syserr("write");
       }
     }
   } else {
@@ -117,10 +117,10 @@ int main(int argc, char **argv)
     for (i = 0; i < ileLiczb - 1; i++) {
       suma(bufor[i], bufor[i + 1]);
       for (j = 0; j < maxPrzen - 1; j++)
-	msgL[j + 1] = bufor[i + 1][j];
+        msgL[j + 1] = bufor[i + 1][j];
       msgL[maxPrzen] = 0;
       if(write(fifoLD, msgL, maxPrzen + 1 + rozmKom) == -1)
-	syserr("write");
+        syserr("write");
     }
   }
   

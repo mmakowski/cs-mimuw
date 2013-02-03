@@ -91,10 +91,10 @@ int main(int argc, char **argv)
       SEMGET(semLewyNowe, BAZA_SEM_KEY + (numer / SEM_W_ZESTAWIE) * 2 + 1, SEM_W_ZESTAWIE, 0600 | IPC_CREAT | IPC_EXCL);
       su.val = 1;
       for (i = 0; i < SEM_W_ZESTAWIE; i++)
-	SEMCTL(semLewy, i, SETVAL, su);
+        SEMCTL(semLewy, i, SETVAL, su);
       su.val = 0;
       for (i = 0; i < SEM_W_ZESTAWIE; i++)
-	SEMCTL(semLewyNowe, i, SETVAL, su);
+        SEMCTL(semLewyNowe, i, SETVAL, su);
       semLNum = 0;
     } else {
       SEMGET(semLewy, BAZA_SEM_KEY + (numer / SEM_W_ZESTAWIE) * 2, SEM_W_ZESTAWIE, 0);
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     SHMAT(lBuf, bLewy);
     for (i = 0; i < ileLiczb; i++) {
       for (j = 0; j < maxPrzen; j++)
-	lBuf[BAZA(i) + j] = '0';
+        lBuf[BAZA(i) + j] = '0';
       lBuf[BAZA(i) + maxPrzen] = 0;
       lBuf[BAZA(i) + maxPrzen + 1] = STARY;
     }
@@ -132,39 +132,39 @@ int main(int argc, char **argv)
       nowa = BRAK;
       i = 0;
       while ((nowa == BRAK) && (i < ileLiczb)) {
-	if (pBuf[BAZA(i) + maxPrzen + 1] == NOWY) {
-	  nowa = i;
-	  suma(pBuf + BAZA(i), bufor[i]);
-	  pBuf[BAZA(i) + maxPrzen + 1] = STARY;
-	  KOM_KOPIUJ
-	}
-	i++;
+        if (pBuf[BAZA(i) + maxPrzen + 1] == NOWY) {
+          nowa = i;
+          suma(pBuf + BAZA(i), bufor[i]);
+          pBuf[BAZA(i) + maxPrzen + 1] = STARY;
+          KOM_KOPIUJ
+        }
+        i++;
       }
       SEM_V(semPrawy, semPNum);
       if (nowa != BRAK) {
-	if (numer < maxProc) {
-	  SEM_P(semLewy, semLNum);
-	  for (j = maxPrzen - 2; j >= 0; j--)
-	    lBuf[BAZA(nowa) + j + 1] = bufor[nowa][j];
-	  lBuf[BAZA(nowa) + maxPrzen + 1] = NOWY;
-	  for (j = 0; j < rozmKom; j++)
-	    lBuf[BAZA(ileLiczb) + j] = 'k';
-	  SEM_V(semLewy, semLNum);
-	  SEM_V(semLewyNowe, semLNum);
-	}
-	ileSk++;
+        if (numer < maxProc) {
+          SEM_P(semLewy, semLNum);
+          for (j = maxPrzen - 2; j >= 0; j--)
+            lBuf[BAZA(nowa) + j + 1] = bufor[nowa][j];
+          lBuf[BAZA(nowa) + maxPrzen + 1] = NOWY;
+          for (j = 0; j < rozmKom; j++)
+            lBuf[BAZA(ileLiczb) + j] = 'k';
+          SEM_V(semLewy, semLNum);
+          SEM_V(semLewyNowe, semLNum);
+        }
+        ileSk++;
       } 
     } else 
       for (i = 0; i < ileLiczb; i++) {
-	SEM_P(semLewy, semLNum);
+        SEM_P(semLewy, semLNum);
         for (j = maxPrzen - 2; j >= 0; j--)
-	  lBuf[BAZA(i) + j + 1] = bufor[i][j];
-	lBuf[BAZA(i) + maxPrzen + 1] = NOWY;
-	for (j = 0; j < rozmKom; j++)
-	  lBuf[BAZA(ileLiczb) + j] = 'k';
-	SEM_V(semLewy, semLNum);
-	SEM_V(semLewyNowe, semLNum);
-	ileSk++;
+          lBuf[BAZA(i) + j + 1] = bufor[i][j];
+        lBuf[BAZA(i) + maxPrzen + 1] = NOWY;
+        for (j = 0; j < rozmKom; j++)
+          lBuf[BAZA(ileLiczb) + j] = 'k';
+        SEM_V(semLewy, semLNum);
+        SEM_V(semLewyNowe, semLNum);
+        ileSk++;
       }    
   }
 
