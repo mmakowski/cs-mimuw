@@ -1,6 +1,6 @@
 CC          := gcc
 CFLAGS      := -Wall -c -D_REENTRANT -D_LIBC_REENTRANT
-LDFLAGS     := -Wall -lpthread
+LDFLAGS     := -Wall -pthread
 SOURCES     := $(wildcard *.c)
 
 MAINOBJECTS := $(subst .c,.o,$(shell grep -l main $(SOURCES)))
@@ -14,7 +14,7 @@ all: $(DEPENDS) $(ALL)
 
 $(DEPENDS) : %.d : %.c				
 	$(CC) -MM $< > $@			
-	@echo -e "\t"$(CC) $(CFLAGS) $< >> $@	
+	@echo "\t"$(CC) $(CFLAGS) $< >> $@	
 
 $(ALL) : % : %.o $(OBJECTS)			
 	$(CC) $(LDFLAGS) -o $@ $^		

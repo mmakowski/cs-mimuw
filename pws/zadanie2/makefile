@@ -14,7 +14,7 @@ all: $(DEPENDS) $(ALL)
 
 $(DEPENDS) : %.d : %.c				
 	$(CC) -MM $< > $@			
-	@echo -e "\t"$(CC) $(CFLAGS) $< >> $@	
+	@echo "\t"$(CC) $(CFLAGS) $< >> $@	
 
 $(ALL) : % : %.o $(OBJECTS)			
 	$(CC) $(LDFLAGS) -o $@ $^		
