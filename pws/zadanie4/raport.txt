@@ -1,0 +1,51 @@
+raport do zadania 4 z PWS LAB
+autor: Maciek Makowski (189188)
+20.06.2001
+
+1. Testy
+
+* ¦rodowisko testowe: komputer wyposa¿ony w procesor AMD Athlon 800 i 224 MB RAM pracuj±cym pod kontrol± systemu Debian GNU/Linux (j±dro 2.4.3)
+* czasy by³y mierzone przy u¿yciu funkcji gettimeofday()
+* wszystkie testy zosta³y przeprowadzone na wersjach kopiuj±cych dodatkowy komunikat do przestrzeni adresowej procesu (kontekstu w±tku). Ze wzglêdu na implementacjê mechanizmów w±tków i pamiêci dzielonej w moim rozwi±zaniu przeprowadzanie testów bez kopiowania by³o bezcelowe, gdy¿ w powy¿szych mechanizmach zastosowa³em pe³ne buforowanie, czyli proces pisz±cy nigdy nie oczekiwa³ na zwolnienie siê miejsca na komunikat, a co za tym idzie jedyne opó¼nienie na które mia³ wp³yw dodatkowy komunikat zwi±zane by³o w³a¶nie z kopiowaniem komunikatu. Mo¿na wiêc przyj±æ, ¿e w implementacji bez kopiowania komunikatu wyniki s± takie same, jak przy komunikacie o d³ugo¶ci 0.
+* dla ka¿dej metody komunikacje przeprowadzi³em 4 rodzaje testów:
+1. du¿ej liczby procesów przy minimalnym obci±¿eniu jednego procesu (N = 2, D = 250)
+2. minimalnej liczby procesów przy du¿ym obci±¿eniu jednego procesu (N = 250, D = 2)
+3. du¿ej liczby procesów przy ¶rednim obci±¿eniu jednego procesu (N = 25, D = 250)
+4. ¶redniej liczby procesów przy du¿ym obci±¿eniu jednego procesu (N = 250, D = 25)
+* ka¿dy z powy¿szych testów zosta³ przeprowadzony dla d³ugo¶ci dodatkowego komunikatu wynosz±cych 0, 1000 i 2000.
+* ka¿dy z testów zosta³ uruchomiony siedem razy - warto¶ci w tabeli poni¿ej stanowi± ¶redni± ze wszystkich uruchomieñ
+
+wyniki testów:
+
+nr | (N, D)    | L    | w±tki           | pamiêæ dzielona | fifo
+---+-----------+------+-----------------+-----------------+-----------------
+1. | (2, 250)  | 0    |   546       (2) |   478       (2) |   365      (50) 
+   |           | 1000 |   719       (2) |   694       (3) |   471      (70) 
+   |           | 2000 |   877       (2) |   911       (3) |   531      (80) 
+---+-----------+------+-----------------+-----------------+-----------------
+2. | (250, 2)  | 0    |   352       (2) |   798      (10) |   476     (200) 
+   |           | 1000 |  2558     (200) |  3411      (50) |   800     (200) 
+   |           | 2000 |  5084     (200) |  6133      (30) |  1303     (200)
+---+-----------+------+-----------------+-----------------+-----------------
+3. | (25, 250) | 0    |   675       (2) |  2818      (30) |  1215     (100) 
+   |           | 1000 |  2694     (200) |  5277      (60) |  2062     (400) 
+   |           | 2000 |  4510     (300) |  7751      (30) |  2876     (700) 
+---+-----------+------+-----------------+-----------------+-----------------
+4. | (250, 25) | 0    |   687       (2) |  1914      (80) |  1540      (30) 
+   |           | 1000 |  5080     (500) |  6970     (300) |  2879     (700) 
+   |           | 2000 | 10874     (300) | 12361    (1000) |  4476     (500) 
+
+* czasy podane s± w dziesiêciotysiecznych czê¶ciach sekundy
+* w nawiasach podane jest maksymalne zaobserwowane odchylenie od ¶redniej warto¶ci
+
+2. Komentarz
+
+Wyniki implementacji na w±tkach i przy u¿yciu pamiêci dzielonej s±, zgodnie z przewidywaniami, porównywalne. Zastrzec wypada³oby jedynie, ¿e w±tki dzia³aj± znacz±co lepiej od pamiêci dzielonej w przypadku du¿ej liczby krótkich komunikatów (testy 3 i 4 bez dodatkowego komunikatu); poza tym w wiêkszosci przypadków w±tki komunikowa³y siê nieznacznie szybciej.
+Wyj±tkowa jest natomiast szybko¶æ ³±cz nazwanych; o ile w przypadku krótkich komunikatów (znów testy 3 i 4 bez dodatkowego komunikatu) fifo wypada gorzej od w±tków (choæ lepiej od pamiêci dzielonej), to w przypadku du¿ej liczby d³ugich komunikatów jest bezkonkurencyjna.
+Czas potrzebny na komunikacjê jest w przypadku ka¿dej z metod liniowo zale¿ny od rozmiaru komunikatu - w tym przypadku ¿aden ze sposobów komunikacji nie jest faworyzowany.
+Porównanie wyników testów 2 i 4 dostarcza nam informacji o tym, jak wp³ywa zwiêkszenie liczby komunikuj±cych siê procesów na czas obliczeñ. W przypadku w±tków i pamiêci dzielonej ponad dziesiêciokrotne zwiêkszenie liczby procesów wyd³u¿y³o czas obliczeñ zaledwie dwukrotnie; w przypadku fifo takie samo zwiêkszenie liczby procesów doprowadzi³o do piêciokrotnego wyd³u¿enia czasu obliczeñ.
+
+3. Podsumowanie
+
+zdecydowanym liderem s± ³±cza nazwane, w niektórych jednak przypadkach - w szczególno¶ci du¿ej liczby procesów z kórych ka¿dy wysy³a du¿o krótkich komunikatów - nale¿y rozwa¿yæ u¿ycie w±tków. Kompletnym przegranym jest natomiast pamiêæ dzielona - wypad³a najgorzej we wszystkich testach. Dodatkowo k³opotliwa implementacja tego mechanizmu przemawia za korzystaniem z innych metod komunikacji miêdzy procesami.
+
