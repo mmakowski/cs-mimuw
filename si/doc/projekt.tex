@@ -1,0 +1,160 @@
+% autorzy: Maciek Makowski, Jerzy Szczepkowski
+
+\documentclass[11pt,a4paper,twoside]{article}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{times}
+\RequirePackage[latin2]{inputenc}
+\RequirePackage[polish]{babel}
+\RequirePackage{a4wide}
+\RequirePackage{longtable}
+\RequirePackage{multicol}
+\RequirePackage{url}
+\usepackage{graphics}
+
+\newcommand{\interfejs}[1]{\paragraph{interfejs \texttt{#1}}}
+\newcommand{\klasa}[1]{\paragraph{klasa \texttt{#1}}}
+\newcommand{\attrstart}{\\\textbf{atrybuty:}\begin{longtable}{|p{1.2in}|p{1.5in}|p{3in}|}\hline {\bf nazwa} & {\bf typ} & {\bf opis}\\\hline\endhead}
+\newcommand{\atrybut}[3]{\texttt{#1} & \texttt{#2} & #3 \\\hline}
+\newcommand{\attrend}{\end{longtable}}
+
+
+\title{Zarys systemu reprezentacji logiki domniemañ w CAKE}
+\author{Maciek Makowski, Jerzy Szczepkowski}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Wstêp}
+\label{wstep}
+
+Projektowany system bêdzie, zgodnie z wymaganiami przedstawionymi w specyfikacji, umo¿liwia³:
+\begin{itemize}
+\item wprowadzenie i modyfikacjê teorii domniemañ w postaci zbioru aksjomatów i zbioru domniemañ - przyjêto ogranicznia mówi±ce, ¿e teorie bêd± proste, za¶ domniemania normalne. Dopuszcza siê stosowanie priorytetów domniemañ oraz silnych warunków wstêpnych (strong prerequisites).
+\item wygenerowanie modelu CAKE dla wprowadzonej teorii opieraj±cego siê na pojêciu agenta,
+\item wylicznie punktu sta³ego i rozszerzenia dla danego modelu CAKE teorii,
+\item udzielenie odpowiedzi, czy podana formu³a nale¿y do rozszerzenia.
+\end{itemize}
+
+\section{Dekompozycja na modu³y}
+\label{moduly}
+
+Wprowadzona teoria bêdzie przetwarzana przez modu³ \texttt{Parser} z postaci tekstowej do obiektowej reprezentacji, opartej o klasy z modu³u \texttt{Theory}. Nastêpnie na podstawie obiektowego modelu teorii, przy u¿yciu klas z modu³u \texttt{Agents} budowany bêdzie model CAKE. W koñcu, w wyniku interakcji miêdzy klasami modelu CAKE wygenerowany zostanie punkt sta³y oraz rozszerzenie teorii.
+
+\subsection{Klasy globalne}
+\label{glob}
+
+\interfejs{Argument} -- musi byæ implementowany przez klasy bêd±ce argumentami dla relacji.
+
+\klasa{Value} -- reprezentuje warto¶æ (³añcuch znaków) bêd±c± pojedynczym argumentem relacji. Implementuje interfejs \texttt{Argument}.
+
+\klasa{Variable} -- reprezentuje zmienn± wystêpuj±c± w formule. Implementuje interfejs \texttt{Argument}.
+\attrstart
+\atrybut{name}{String}{nazwa zmiennej}
+\atrybut{val}{String}{warto¶æ zmiennej}
+\attrend
+
+\klasa{Tuple} -- krotka argumentów relacji.
+
+\klasa{Relation} -- relacja.
+\attrstart
+\atrybut{name}{String}{nazwa relacji}
+\atrybut{rank}{Integer}{liczba argumentów}
+\atrybut{elements}{Tuple Set}{zbiór elementów spe³niaj±cych relacjê}
+\atrybut{default}{Agents.Agent}{g³ówny agent (mo¿e byæ modu³) reprezentuj±cy domniemania dla tej relacji}
+\atrybut{database}{Agents.Agent}{agent bazodanowy dla tej relacji}
+\attrend
+
+\subsection{modu³ \texttt{Parser}}
+\label{parser}
+
+\klasa{Parser} -- przetwarza ³añcuchy znaków na elementy modelu prostego.
+
+
+
+\subsection{modu³ \texttt{Theory}}
+\label{theory}
+
+\klasa{Atom} -- pojedyncze wyst±pienie relacji w formule.
+\attrstart
+\atrybut{rel}{Relation}{relacja, do której odnosi siê atom}
+\atrybut{pos}{Boolean}{czy wystêpuje w postaci pozytywnej, czy zanegowanej}
+\atrybut{args}{Tuple}{argumenty relacji}
+\attrend
+
+\klasa{Axiom: Atom} -- aksjomat (argumenty relacji s± warto¶ciami).
+
+\klasa{Consequent: Atom} -- konsekwencja domniemania (argumenty s± zmiennymi lub warto¶ciami).
+
+\klasa{PrerequisiteAtom: Atom} -- atom wystêpuj±cy w warunku wstêpnym domniemania.
+\attrstart
+\atrybut{strong}{Boolean}{czy wymaga pewnej wiedzy (strong prerequisite)}
+\attrend
+
+\klasa{Default} -- reprezentuje domniemanie.
+\attrstart
+\atrybut{priority}{Integer}{priorytet}
+\atrybut{vars}{Variable Set}{Zbiór zmiennych wolnych wystêpuj±cych w formu³ach domniemania}
+\atrybut{prerequisite}{PrerequisiteAtom Set}{zbiór atomów bêd±cych elementami koniunkcji stanowi±cej warunek wstêpny}
+\atrybut{justification}{Atom}{uzasadnienie}
+\atrybut{consequent}{Consequent}{konsekwencja domniemania}
+\attrend
+
+\klasa{Theory} -- ca³a teoria.
+\attrstart
+\atrybut{axioms}{Axiom Set}{aksjomaty}
+\atrybut{defaults}{Default Set}{domniemania}
+\attrend
+
+
+
+\subsection{modu³ \texttt{Agents}}
+\label{agents}
+
+\klasa{Atom} -- reprezentuje pojedyncze wyst±pienie relacji w formule. \\\textbf{Uwaga}: nie musimy pamiêtaæ, od którego agenta pobieramy informacjê o warto¶ci danej relacji, bo to jest pamiêtane w klasie \texttt{Relation}. Je¿eli \texttt{strong == false}, to pobieramy informacjê od g³ównego agenta domniemaniowego dla danej relacji; wpp. pobieramy informacjê od agenta bazodanowego. Informacja, którego agenta dotyczy dane odwo³anie, bêdzie natomiast potrzebna na etapie wyliczania punktu sta³ego, st±d atrybut \texttt{agent}.
+\attrstart
+\atrybut{rel}{Relation}{relacja, której wyst±pienie oznacza ten atom}
+\atrybut{agent}{Agent}{agent, którego pytamy o warto¶æ relacji}
+\atrybut{form}{enum}{mo¿e przyjmowaæ warto¶ci \texttt{POS}, \texttt{NEG}, \texttt{NONPOS} lub \texttt{NONNEG} -- postaæ, w jakiej wystêpuje relacja w formule}
+\atrybut{strong}{Boolean}{czy wymaga pewnej wiedzy (od agenta bazodanowego)}
+\atrybut{args}{Tuple}{argumenty dla relacji (warto¶ci lub zmienne)}
+\attrend
+
+\klasa{Formula} -- reprezentuje formu³y, do których przekszta³cane s± pozytywne i negatywne regu³y agentów i na podstawie których generowany jest punkt sta³y.
+\attrstart
+\atrybut{pre}{Atom Set}{zbiór elementów koniunkcji, która stanowi lew± stronê implikacji (ogon) - je¶li pusty, regu³a ma sam± g³owê}
+\atrybut{cons}{Atom}{g³owa - prawa strona implikacji}
+\atrybut{vars}{Variable Set}{zbiór zmiennych wolnych wystêpuj±cych w formule}
+\attrend
+
+\klasa{AgentFormula} -- reprezentuje formu³ê agenta wystêpuj±c± w czê¶ci pozytywnej lub negatywnej. Jedyna dopuszczalna postaæ takiej formu³y to koniunkcja atomów.
+\attrstart
+\atrybut{atoms}{Atom Set}{zbiór elementów koniunkcji, która stanowi ca³± formu³ê}
+\atrybut{vars}{Variable Set}{zbiór zmiennych wolnych wystêpuj±cych w atomach}
+\attrend
+
+\klasa{Agent} -- klasa abstrakcyjna, reprezentuj±ca agenta.
+\attrstart
+\atrybut{name}{String}{nazwa agenta}
+\atrybut{rel}{Relation}{relacja, za któr± agent odpowiada}
+\atrybut{pos}{Tuple Set}{zbiór krotek warto¶ci spe³niaj±cych relacjê}
+\atrybut{neg}{Tuple Set}{zbiór krotek warto¶ci nie spe³niaj±cych relacji}
+\attrend
+
+\klasa{DatabaseAgent: Agent} -- reprezentuje agenta bazodanowego.
+
+\klasa{DefaultAgent: Agent} -- reprezentuje agenta domniemaniowego.
+\attrstart
+\atrybut{posRules}{AgentFormula Set}{zbiór regu³ spe³niania relacji}
+\atrybut{negRules}{AgentFormula Set}{zbiór regu³ niespe³niania relacji}
+\atrybut{priority}{Integer}{priorytet domniemania, za które odpowiada agent}
+\attrend
+
+\klasa{DefaultModule: Agent} -- reprezentuje modu³.
+\attrstart
+\atrybut{agents}{DefaulAgent Set}{zbiór agentów nale¿±cych do modu³u}
+\attrend
+
+\end{document}
+ 

@@ -1,0 +1,140 @@
+# HardCAKE properties (default)
+#
+# (c) 2002 Maciek Makowski, Jerzy Szczepkowski
+
+
+# version and copyright description #------------------------------------------
+
+STR_PROG_VERSION = version 0.1.1
+STR_PROG_COPYRIGHT = (c) 2002 Maciek Makowski, Jerzy Szczepkowski
+
+
+# window properties #----------------------------------------------------------
+#
+# possible values for look and feel are:
+#  javax.swing.plaf.metal.MetalLookAndFeel
+#  com.sun.java.swing.plaf.windows.WindowsLookAndFeel
+#  com.sun.java.swing.plaf.motif.MotifLookAndFeel
+# (NB not all l&fs may be supported on your platform; the first one should
+# work everywhere)
+#
+# the font entries have form:
+#  <name> <style> <size>
+# possible values for <name> are:
+#  Dialog DialogInput Monospaced Serif SansSerif
+# possible values for <style> are:
+#  BOLD BOLDITALIC ITALIC PLAIN
+# the <size> has to be a positive integer
+#
+# -----------------------------------------------------------------------------
+
+WINDOW_LOOK_AND_FEEL = javax.swing.plaf.metal.MetalLookAndFeel
+WINDOW_SIZE = 600 400
+WINDOW_FONT =              SansSerif  PLAIN 10
+WINDOW_FONT_BIG =          SansSerif  BOLD  16
+WINDOW_FONT_LABEL =        SansSerif  PLAIN 12
+WINDOW_FONT_THEORY =       Monospaced PLAIN 12
+WINDOW_FONT_THEORY_INPUT = Monospaced PLAIN 12
+WINDOW_FONT_TRANSCRIPT =   Monospaced PLAIN 12
+
+
+# menu & toolbar #-------------------------------------------------------------
+#
+# available menu/toolbar commands:
+#  cmdAbout             - show the "About HardCAKE" dialog
+#  cmdAddAxiom          - add new axiom
+#  cmdAddDefault        - add new default
+#  cmdCompExt           - compute the extension for the CAKE diagram
+#  cmdDelAxiom          - delete selected axiom
+#  cmdDelDefault        - delete selected default
+#  cmdEditAxiom         - edit selected axiom
+#  cmdEditDefault       - edit selected default
+#  cmdExit              - close the application
+#  cmdGenDiagram        - generate the CAKE diagram for the theory
+#  cmdNew               - create new file
+#  cmdOpen              - open previously saved file
+#  cmdQuery             - execute query on the theory
+#  cmdSave              - save current theory to a default file
+#  cmdSaveAs            - save current theory to a specified file
+#
+#  - indicates menu/toolbar separator
+#
+# -----------------------------------------------------------------------------
+
+MENU = FILE EDIT PROCESS HELP
+MENU_FILE = cmdNew cmdOpen cmdSave cmdSaveAs - cmdExit
+MENU_EDIT = AXIOM DEFAULT
+MENU_AXIOM = cmdAddAxiom cmdEditAxiom cmdDelAxiom
+MENU_DEFAULT = cmdAddDefault cmdEditDefault cmdDelDefault
+MENU_PROCESS = cmdGenDiagram cmdCompExt cmdQuery
+MENU_HELP = cmdAbout
+
+
+# menu & command descriptions #------------------------------------------------
+
+STR_MENU_FILE = File
+STR_MENU_EDIT = Edit
+STR_MENU_AXIOM = Axiom
+STR_MENU_DEFAULT = Default
+STR_MENU_PROCESS = Process
+STR_MENU_HELP = Help
+
+STR_CMD_ABOUT = About HardCAKE...
+STR_CMD_ADD_AXIOM = Add...
+STR_CMD_ADD_DEFAULT = Add...
+STR_CMD_COMP_EXT = Compute extension
+STR_CMD_DEL_AXIOM = Delete
+STR_CMD_DEL_DEFAULT = Delete
+STR_CMD_EDIT_AXIOM = Edit...
+STR_CMD_EDIT_DEFAULT = Edit...
+STR_CMD_EXIT = Exit
+STR_CMD_GEN_DIAGRAM = Generate CAKE diagram
+STR_CMD_NEW = New
+STR_CMD_OPEN = Open...
+STR_CMD_QUERY = Query...
+STR_CMD_SAVE = Save
+STR_CMD_SAVE_AS = Save as...
+
+
+# widget captions #------------------------------------------------------------
+
+STR_CAP_BTN_CANCEL = Cancel
+STR_CAP_BTN_CLOSE = Close
+STR_CAP_BTN_OK = OK
+STR_CAP_BTN_QUERY = Query
+STR_CAP_DLG_ABOUT = About HardCAKE
+STR_CAP_DLG_AXIOM = Edit axiom
+STR_CAP_DLG_DEFAULT = Edit default
+STR_CAP_DLG_QUERY = Query diagram
+STR_CAP_LBL_FALSE = FALSE
+STR_CAP_LBL_RESPONSE = response: 
+STR_CAP_LBL_TRUE = TRUE
+STR_CAP_LBL_UNKNOWN = UNKNOWN
+STR_CAP_PAN_AXIOM = Axioms
+STR_CAP_PAN_DEFAULT = Defaults
+STR_CAP_TXT_AXIOM = axiom:
+STR_CAP_TXT_CONS = cons:
+STR_CAP_TXT_JUST = just:
+STR_CAP_TXT_PRE = pre:
+STR_CAP_TXT_PRIORITY = priority:
+
+# messages & message titles #--------------------------------------------------
+
+STR_MSG_ERROR_OPENING = Could not open the file:\n%1
+STR_MSG_ERROR_OPENING_TITLE = Error opening file
+STR_MSG_ERROR_SAVING = Could not save the file:\n%1
+STR_MSG_ERROR_SAVING_TITLE = Error saving file
+STR_MSG_FILE_EXISTS = The file %1\n already exists. Overwrite?
+STR_MSG_FILE_EXISTS_TITLE = File exists
+STR_MSG_FILE_NOT_FOUND = The file %1 does not exist.
+STR_MSG_FILE_NOT_FOUND_TITLE = File not found
+STR_MSG_FILE_NOT_READABLE = Can't read file %1.\n Make sure, that you have all the necessary privileges.
+STR_MSG_FILE_NOT_READABLE_TITLE = File not readable
+STR_MSG_NO_AXIOM_SELECTED = No axiom is selected.
+STR_MSG_NO_AXIOM_SELECTED_TITLE = No axiom selected
+STR_MSG_NO_DEFAULT_SELECTED = No default is selected.
+STR_MSG_NO_DEFAULT_SELECTED_TITLE = No default selected
+STR_MSG_NO_DIAGRAM = No diagram has been generated.\nPlease use "Generate CAKE diagram" first.
+STR_MSG_NO_DIAGRAM_TITLE = No diagram
+STR_MSG_SAVE_CURRENT = There have been changes in the document since the last save.\nWould you like to save current file?
+STR_MSG_SAVE_CURRENT_TITLE = Unsaved changes

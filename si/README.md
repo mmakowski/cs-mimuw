@@ -1,0 +1,1 @@
+The final assignment in Artificial Intelligence: an implementation of a tool for representing [CAKE](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.224.3) diagrams. Co-developed with Jerzy Szczepkowski.

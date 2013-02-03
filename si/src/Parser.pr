@@ -1,0 +1,13 @@
+# Parser properties (default)
+#
+# (c) 2002 Maciek Makowski, Jerzy Szczepkowski
+
+
+# symbol definitions #---------------------------------------------------------
+SYMBOL_NEG = ~
+SYMBOL_CON = &
+SYMBOL_LBR = (
+SYMBOL_RBR = )
+SYMBOL_SEP = ,
+SYMBOL_VAR = $
+SYMBOL_STG = *
