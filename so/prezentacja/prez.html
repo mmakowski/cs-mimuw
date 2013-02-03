@@ -1,0 +1,1338 @@
+<html>
+    <head>
+        <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+        <style type="text/css">
+            h1 {
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 24pt;
+                LINE-HEIGHT: 200px;
+                TEXT-ALIGN: center
+            }
+            h2 {
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 18pt;
+                LINE-HEIGHT: 50px;
+                TEXT-ALIGN: center
+            }
+            h3 {
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 16pt;
+                LINE-HEIGHT: 30px;
+                TEXT-ALIGN: center
+            }
+            h4 {
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 13pt;
+                LINE-HEIGHT: 20px;
+                TEXT-ALIGN: center
+            }
+            p {
+                FONT-FAMILY: Times New Roman, Serif, Roman, Gothic;
+                FONT-SIZE: 12pt;
+                TEXT-ALIGN: justify
+            }
+            table {
+                FONT-FAMILY: Times New Roman, Serif, Roman, Gothic;
+                FONT-SIZE: 12pt;
+            }
+            td {
+                VERTICAL-ALIGN: top
+            }
+            ul {
+                FONT-FAMILY: Times New Roman, Serif, Roman, Gothic;
+                FONT-SIZE: 12pt;
+            }
+            ul.1 {
+                FONT-SIZE: 12pt;
+            }
+            ol {
+                FONT-FAMILY: Times New Roman, Serif, Roman, Gothic;
+                FONT-SIZE: 12pt;
+            }
+            li {
+                TEXT-ALIGN: justify;
+            }
+            pre {
+                FONT-FAMILY: Courier New, Courier;
+                FONT-SIZE: 11pt;
+            }
+            code {
+                FONT-FAMILY: Courier New, Courier;
+                FONT-SIZE: 11pt;
+            }
+            .pcode {
+                FONT-FAMILY: Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 10pt;
+            }
+            .pcode.nl {
+                COLOR: #666666;
+                FONT-SIZE: 8pt
+            }
+            .path {
+                FONT-FAMILY: Lucida console, Courier New, Courier;
+                FONT-SIZE: 10pt;
+            }                
+            .auth {
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 10pt;
+                FONT-WEIGHT: bold;
+                TEXT-ALIGN: center
+            }
+            .sig {
+                COLOR: #aaaaaa;
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 8pt;
+                TEXT-ALIGN: right
+            }
+            .comment {
+                FONT-FAMILY: Times New Roman, Serif, Roman, Gothic;
+                FONT-SIZE: 10pt;
+            }            
+            a.toc {
+                COLOR: #000066;
+                FONT-FAMILY: Times New Roman, Serif, Roman, Gothic;
+                FONT-SIZE: 12pt;
+                TEXT-DECORATION: none
+            }
+            a.toc:hover {
+                COLOR: #6666ff;
+                TEXT-DECORATION: underline
+            }
+            a.toc2 {
+                COLOR: #000066;
+                FONT-FAMILY: Times New Roman, Serif, Roman, Gothic;
+                FONT-SIZE: 11pt;
+                TEXT-DECORATION: none
+            }
+            a.toc2:hover {
+                COLOR: #6666ff;
+                TEXT-DECORATION: underline
+            }
+            a.totoc {
+                COLOR: #000066;
+                FONT-FAMILY: Times New Roman, Serif, Roman, Gothic;
+                FONT-SIZE: 8pt;
+                TEXT-DECORATION: none
+            }
+            a.totoc:hover {
+                COLOR: #6666ff;
+                TEXT-DECORATION: underline
+            }
+        </style>
+        <title>Zarządzanie procesami w Linux 2.4.7</title>
+    </head>
+    <body bgcolor="#ffffff">
+        <h1>Zarządzanie procesami w Linux 2.4.7</h1>
+        <div class="auth">
+        Agnieszka Harasimczuk<br>
+        Maciej Makowski<br>
+        Hubert Śledź<br>
+        Anna Włudarska
+        </div><br><br><br>
+        <hr noshade>
+        <a name="toc"><h3>spis treści</h3>
+        <ol>
+            <li><a href="#struktury" class="toc">Wybrane struktury danych i funkcje do obsługi procesów</a>
+                <ol>
+                    <li><a href="#list_h" class="toc2">Standardowa implementacja list (list.h)</a>
+                    <li><a href="#task_struct" class="toc2">Struktura task_struct</a>
+                    <li><a href="#task_union" class="toc2">task_union</a>
+                    <li><a href="#current" class="toc2">Makrodefinicja current</a>
+                    <li><a href="#pidhash" class="toc2">Tablica pidhash</a>
+                </ol>
+            <li><a href="#run_queue" class="toc">Kolejka procesów gotowych</a>
+                <ol>
+                    <li><a href="#add_to_runqueue" class="toc2">Algorytm add_to_runqueue</a>
+                    <li><a href="#del_from_runqueue" class="toc2">Algorytm del_from_runqueue</a>
+                    <li><a href="#move_last_runqueue" class="toc2">Algorytm move_last_runqueue</a>
+                    <li><a href="#move_first_runqueue" class="toc2">Algorytm move_first_runqueue</a>
+                </ol>
+            <li><a href="#wait_queue" class="toc">Kolejki procesów oczekujących</a>
+                <ol>
+                    <li><a href="#add_wait_queue" class="toc2">Algorytm add_wait_queue</a>
+                    <li><a href="#remove_wait_queue" class="toc2">Algorytm remove_wait_queue</a>
+                </ol>
+            <li><a href="#zmiany_stanu" class="toc">Zmiany stanu procesu</a>
+                <ol>
+                    <li><a href="#sleep_on" class="toc2">Algorytm sleep_on</a>
+                    <li><a href="#try_to_wake_up" class="toc2">Algorytm try_to_wake_up</a>
+                    <li><a href="#wake_up" class="toc2">Algorytm wake_up</a>
+                </ol>
+            <li><a href="#szeregowanie" class="toc">Szeregowanie procesów</a>
+                <ol>
+                    <li><a href="#typy_procesow" class="toc2">Typy procesów</a>
+                    <li><a href="#klasy_procesow" class="toc2">Klasy procesów</a>
+                    <li><a href="#polityki_szeregowania" class="toc2">Polityki szeregowania</a>
+                    <li><a href="#wywolanie_schedule" class="toc2">Wywołanie funkcji schedule</a>
+                    <li><a href="#sd_szeregowania" class="toc2">Struktury danych związane z szeregowaniem</a>
+                    <li><a href="#nice_to_ticks" class="toc2">Makro NICE_TO_TICKS</a>
+                    <li><a href="#goodness" class="toc2">Funkcja goodness</a>
+                    <li><a href="#dzialanie_szereg" class="toc2">Działanie funkcji szeregującej</a>
+                    <li><a href="#fun_sys_szereg" class="toc2">Funkcje systemowe związane z szeregowaniem</a>
+                </ol>
+            <li><a href="#synchro" class="toc">Synchronizacja procesów na poziomie jądra</a>
+                <ol>
+                    <li><a href="#blokady" class="toc2">Blokady</a>
+                    <li><a href="#up" class="toc2">Algorytm up</a>
+                    <li><a href="#down" class="toc2">Aglorytm down</a>
+                </ol>
+            <li><a href="#switch" class="toc">Przełączanie kontekstu</a>
+                <ol>
+                    <li><a href="#switch_to" class="toc2">Makro switch_to</a>
+                </ol>
+            <li><a href="#exec" class="toc">Algorytm exec</a>
+        </ol><br><br>
+
+<!-- wybrane struktury danych i funkcje (AH) -->
+        <hr noshade>
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#struktury" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="struktury"><h2>Wybrane struktury danych i funkcje do obsługi procesów</h2>
+        <p>Aby zarządzać procesami jądro musi mieć pełne informacje na ich temat. Jest to zadanie deskryptora procesu, mającego strukturę typu <code>task_struct</code>, której pola zawierają informacje dotyczące jednego procesu.</p>
+
+<!-- standardowa implementacja list (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#list_h" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="list_h"><h3>Standardowa implementacja list (list.h)</h3>
+        <table width=100%><tr><td>
+        <img src="res/list_h.jpg" align="right">
+        <ul>
+            <li>listy dwukierunkowe są w Linuksie 2.4 implementowane przy pomocy struktur i operacji zdefiniowanych w <a class="path">Linux/include/linux/list.h</a><br><br><br>
+            <li>podstawowa struktura:<br>
+<pre>struct list_head {
+        struct list_head *next, *prev;
+};</pre><br>
+            <li>wskaźnik do elementu listy uzyskiwany jest na podstawie wskaźnika do <code>list_head</code> i wiedzy o typie elementu (arytmetyka wskaźników) przy pomocy makra <code>list_entry()</code><br><br><br>
+            <li>dostępne są standardowe operacje na listach: 
+                <ul class="1">
+                    <li>sprawdzanie czy lista jest pusta (<code>list_empty()</code>)
+                    <li>wstawianie elementu - na początek (<code>list_add()</code>) albo na koniec (<code>list_add_tail()</code>)
+                    <li>usuwanie elementu (<code>list_del()</code>)
+                    <li>łączenie dwóch list (<code>list_splice()</code>)
+                    <li>iteracja po elementach listy (<code>list_for_each()</code>)
+                </ul>
+        </ul>
+        </td></tr></table>
+
+<!-- struktura task_struct (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#task_struct" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="task_struct"><h4>Struktura task_struct</h4>
+        <img src="res/taskstruct.jpg" align="left">
+        <p><code>struct task_struct *next_task, *prev_task</code> - pozwalają powiązać wszystkie procesy w dwukierunkową listę cykliczną;<br><br>
+        <code>unsigned long flags</code> - zmienna zawiera połączenie flag systemu:	
+        <table border="0" cellpadding="1" cellspacing="0">
+            <tr><td width="40">&nbsp;</td><td><code>PF_ALIGNWARN</code></td><td width="20">&nbsp;</td><td>/* jeszcze nie zaimplementowana */</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>PF_STARTING</code></td><td width="20">&nbsp;</td><td>/* proces tworzony */</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>PF_EXITING</code></td><td width="20">&nbsp;</td><td>/* proces kończony */</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>PF_FORKNOEXEC</code></td><td width="20">&nbsp;</td><td>/* proces potomny po operacji fork, jeszcze nie wykonywany */</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>F_SUPERPRIV</code></td><td width="20">&nbsp;</td><td>/* proces ma uprawnienia super użytkownika */</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>PF_DUMPCORE</code></td><td width="20">&nbsp;</td><td>/* proces &quot;zrzuca&quot; obszar pamięci */</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>PF_SIGNALED</code></td><td width="20">&nbsp;</td><td>/* uśmiercony sygnałem */</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>PF_MEMALLOC</code></td><td width="20">&nbsp;</td><td>/* proces w czasie alokacji pamięci */</td></tr>
+        </table><br>
+        <code>struct mm_struct *mm</code> - wskaźniki do deskryptorów obszarów pamięci<br><br>
+        <code>int has_cpu, processor</code> - procesor, na jakim proces się wykonuje<br><br>
+        <code>unsigned long cpus_allowed</code> - informacja, na których procesorach proces może się wykonywać<br><br>
+        <code>struct linux_binfmt *binfmt</code> - dzięki tej zmiennej możemy uruchamiać w Linuksie programy przez napisanie ich nazw<br><br>
+        <code>/* identyfikator procesu */</code><br>
+        <code>pid_t pid</code> - numer identyfikacyjny procesu<br>
+        <code>pid_t pgrp</code> - numer identyfikacyjny grupy procesów<br>
+        <code>pid_t session</code> - identyfikator sesji<br>
+        <code>int leader</code> - wartość mówiąca, czy proces jest liderem grupy<br>
+        <code>int ngroups</code> - ilość grup, do których należy proces<br>
+        <code>gid_t groups[NGROUPS]</code> - struktury opisujące grupy, do których proces należy<br><br>
+        <code>struct task_struct *p_opptr, *p_pptr, *p_cptr, *p_ysptr, *p_osptr</code> - zmienne te pokazują na: 
+        <table>
+            <tr>    
+                <td>
+                    <table border="0" cellpadding="1" cellspacing="0">
+                        <tr><td width="40">&nbsp;</td><td><code>*p_opptr</code></td><td width="20">&nbsp;</td><td>- oryginalnego rodzica</td></tr>
+                        <tr><td width="40">&nbsp;</td><td><code>*p_pptr</code></td><td width="20">&nbsp;</td><td>- rodzica</td></tr>
+                        <tr><td width="40">&nbsp;</td><td><code>*p_cptr</code></td><td width="20">&nbsp;</td><td>- najmłodszego potomka</td></tr>
+                        <tr><td width="40">&nbsp;</td><td><code>*p_ysptr</code></td><td width="20">&nbsp;</td><td>- młodszego brata</td></tr>
+                        <tr><td width="40">&nbsp;</td><td><code>*p_osptr</code></td><td width="20">&nbsp;</td><td>- starszego brata</td></tr>
+                    </table><br>
+                </td>
+                <td>
+                    <img src="res/siblings.jpg">
+                </td>
+            </tr>
+        </table>
+        <code>unsigned long start_time</code> - moment, w którym proces został stworzony<br><br>
+        <code>long per_cpu_utime[NR_CPUS], per_cpu_stime[NR_CPUS]</code> - tablice te przechowują informacje, ile czasu proces spędził odpowiednio w trybie użytkownika i w trybie systemowym, na poszczególnych procesorach<br><br>
+        <code>struct user_struct *user</code> - informacja o właścicielu<br>
+        <code>struct tty_struct *tty</code> - terminal związany z procesem (jeżeli nie ma NULL)<br><br>
+        <code>struct sem_undo *semundo</code> - informacja o zajmowanych semaforach<br><br>
+        <code>/* szeregowanie */</code><br>
+        <code>volatile long state</code> - stan, w jakim znajduje się proces (-1 unrunnable, 0 runnable, >0 stopped)<br>
+        <code>volatile long need_resched</code> - jeśli ta flaga jest ustawiona, oznacza to, że potrzebne jest wykonanie przeszeregowania procesów - wywołanie funkcji <code>schedule()</code>;<br>
+        <code>long counter</code> - liczba tyknięć zegara, które pozostały procesowi do zakończenia jego kwantu czasu; wywołanie funkcji <code>update_process_times()</code> zmniejsza o jeden zawartość tego pola;<br>
+        <code>long nice</code> - wpływa na długość kwantu czasu przyznanego procesowi <a class="comment">(w starszych wersjach Linuksa jej rolę spełniało priority)</a>; zmienia się ona od -20 (najwyższy priorytet) do +19 (najniższy priorytet);<br>
+        <code>unsigned long policy</code> - polityka szeregowania;<br>
+        <code>unsigned long rt_priority</code> - statyczny priorytet procesów czasu rzeczywistego; przyjmuje wartości od 0 (proces zwykły) do 99 (najwyższy priorytet);<br><br>
+        <code>/* tablica pidhash */</code><br>
+        <code>struct task_struct *pidhash_next</code> - wykorzystywane przez tablicę z hashowaniem<br>
+        <code>struct task_struct **pidhash_pprev</code> - j.w.<br><br>
+        <code>/* pliki */</code><br>
+        <code>struct fs_struct *fs</code> - tu znajdują się dane związane z systemem plików<br>
+        <code>struct files_struct *files</code> - informacje o plikach otwartych<br><br>
+        <code>/* sygnały */</code><br>
+        <code>int exit_code, exit_signal</code> - kod zakończenia procesu i sygnał wyjścia<br>
+        <code>spinlock_t sigmask_lock</code> - ochrona i blokada sygnałów<br>
+        <code>struct signal_struct *sig</code> - wskaźnik do tablicy przechowującej informacje na temat sposobu obsługi otrzymanych sygnałów<br>
+        <code>sigset_t blocked</code> - zawiera maski bitowe sygnałów otrzymywanych, ale tych które są obecnie zablokowane, więc trzeba będzie je obsłużyć później<br>
+        </p><br><br>
+        
+<!-- Task_union (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#task_union" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="Task_union"><h4>Task_union</h4>
+        <p>Proces w trybie jądra używa stosu zawartego w segmencie danych jądra, który różni się od stosu używanego w trybie użytkownika. Ścieżki wykonania jądra rzadko używają tego stosu, więc 8KB jest wystarczającym obszarem na stos i deskryptor procesu. Taką strukturę wyrażono za pomocą następującej unii:</p>
+<pre>
+union task_union {
+	struct task_struct task;
+	unsigned long stack[2048];
+};
+</pre>
+        <p>Rejestr esp jest wskaźnikiem stosu używanym do określenia położenia wierzchołka stosu. W systemach Intela stos zaczyna się na końcu i rozszerza w kierunku początku obszaru pamięci, gdzie znajduje się deskryptor procesu. Zaraz po przełączeniu się z trybu użytkownika do trybu jądra, stos jądra procesu jest pusty i rejestr esp wskazuje na bajt znajdujący się tuż za obszarem pamięci.<br><br>
+        <code>free_task_struct()</code> - Funkcja zwraca 8-kilobajtowe obszary pamięci task_union i umieszcza je w pamięci podręcznej do czasu zapełnienia.<br><br>
+        <code>alloc_task_struct()</code> - Funkcja ta alokuje obszary pamięci dla <code>task_union</code> o wielkości 8 KB. (Uwaga: Z powodu wydajności jądro przechowuje te 8 KB jako dwa, znajdujące się obok siebie bloki stronicowe, gdzie pierwsza strona jest wyrównana do wielokrotności 2<sup>13</sup>.)<br><br>
+        <br><br>
+        
+<!-- makrodefinicja current (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#current" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="current"><h4>Makrodefinicja current</h4>
+        <p>Jądro może w prosty sposób określić wskaźnik deskryptora procesu aktualnie wykonującego się na podstawie wartości rejestru esp. (Obszar pamięci ma 2<sup>13</sup> bajtów, więc wystarczy, że jądro zamaskuje 13 najmniej znaczących bitów esp).</p>
+        <br><br>
+        
+<!-- tablica pidhash (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#pidhash" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="pidhash"><h4>Tablica pidhash</h4>
+        <p>Istnieją sytuacje, w których jądro powinno mieć możliwość pobrania wskaźnika deskryptora na podstawie numeru pid (np. przy wywołaniu funkcji systemowych związanych ze <code>schedule()</code>). W celu przyspieszenia przeszukiwania listy procesów i sprawdzania numerów pid w deskryptorach wprowadzono tablicę <code>pidhash</code>, która obecnie ma 1024 elementy. Pozycje tabeli zawierają wskaźniki do deskryptorów procesu. Pid jest tłumaczony na indeks tablicy za pomocą następującego makra:<br><br>
+        <code>#define pid_hashfn(x)	((((x) &gt;&gt; 8) ^ (x)) & (1023))</code><br><br>
+        Zdarzają się sytuacje, że dwa numery dają ten sam indeks w tablicy. W tym celu Linux używa łańcuchów (każda pozycja tabeli to dwustronna lista kolidujących procesów, zrealizowana za pomocą <code>pidhash_next</code> i <code>pidhash_pprev</code> w deskryptorze procesu).<br> 
+        Do wstawiania i usuwania procesów z tablicy służą funkcje: <code>hash_pid()</code> i <code>unhash_pid()</code>. Funkcja <code>find_task_by_pid()</code> zwraca wskaźnik deskryptora procesu o zadanym pid.
+        <br><br>
+        
+<!-- kolejka procesów gotowych (MM) -->
+        <hr noshade>
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#run_queue" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="run_queue"><h2>Kolejka procesów gotowych</h2>
+        <ul>
+            <li>kolejka procesów gotowych zawiera procesy znajdujące się w stanie <code>TASK_RUNNING</code> - niekoniecznie wszystkie takie, bo operacje ustawienia stanu procesu na <code>TASK_RUNNING</code> i wstawienia go do kolejki procesów gotowych nie są wykonywane atomowo<br><br>
+            <li>zaimplementowana jest w strukturze <code>task_struct</code> jako pole <code>run_list</code> typu <code>struct list_head</code><br><br>
+            <li>proces <code>idle</code> nie jest umieszczany w kolejce procesów gotowych<br><br>
+            <li>dostęp do początku kolejki można uzyskać za pomocą zmiennej globalnej <code>runqueue_head</code> zadeklarowanej w pliku <a class="path">Linux/kernel/sched.c</a>
+        </ul>
+        <br><br>
+
+<!-- algorytm add_to_runqueue (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#add_to_runqueue" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="add_to_runqueue"><h4>Algorytm add_to_runqueue</h4>
+        <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+            <tr><td><b>środowisko:</b></td><td>&nbsp;</td><td align="right"><code>nr_running</code></td><td>&nbsp;</td><td>- licznik aktywnych procesów</td></tr>
+        </table><br>
+<pre>
+static inline void add_to_runqueue(struct task_struct * p)
+{
+        list_add(&p->run_list, &runqueue_head);
+        nr_running++;
+}
+</pre>
+        
+<!-- algorytm del_from_runqueue (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#del_from_runqueue" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="del_from_runqueue"><h4>Algorytm del_from_runqueue</h4>
+        <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+            <tr><td><b>środowisko:</b></td><td>&nbsp;</td><td align="right"><code>nr_running</code></td><td>&nbsp;</td><td>- licznik aktywnych procesów</td></tr>
+            <tr><td><b>&nbsp;</b></td><td>&nbsp;</td><td align="right"><code>jiffies</code></td><td>&nbsp;</td><td>- licznik liczby taktów, która upłynęła od startu systemu</td></tr>
+        </table><br>
+<pre>
+static inline void del_from_runqueue(struct task_struct * p)
+{
+        nr_running--;
+        p->sleep_time = jiffies;
+        list_del(&p->run_list);
+        p->run_list.next = NULL;
+}
+</pre>
+        <ul>
+            <li>wartość pola <code>run_list.next</code> jest później sprawdzana w celu ustalenia, czy proces znajduje się w kolejce procesów gotowych
+        </ul>
+        
+<!-- algorytm move_last_runqueue (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#move_last_runqueue" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="move_last_runqueue"><h4>Algorytm move_last_runqueue</h4>
+        <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+            <tr><td><b>środowisko:</b></td><td>&nbsp;</td><td align="right"><code>runqueue_head</code></td><td>&nbsp;</td><td>- wskaźnik do pierwszego elementu kolejki procesów gotowych</td></tr>
+        </table><br>
+<pre>
+static inline void move_last_runqueue(struct task_struct * p)
+{
+        list_del(&p->run_list);
+        list_add_tail(&p->run_list, &runqueue_head);
+}
+</pre>
+        
+<!-- algorytm move_first_runqueue (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#move_first_runqueue" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="move_first_runqueue"><h4>Algorytm move_first_runqueue</h4>
+        <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+            <tr><td><b>środowisko:</b></td><td>&nbsp;</td><td align="right"><code>runqueue_head</code></td><td>&nbsp;</td><td>- wskaźnik do pierwszego elementu kolejki procesów gotowych</td></tr>
+        </table><br>
+<pre>
+static inline void move_first_runqueue(struct task_struct * p)
+{
+        list_del(&p->run_list);
+        list_add(&p->run_list, &runqueue_head);
+}
+</pre>
+        
+<!-- kolejki procesów oczekujących (MM) -->
+        <hr noshade>
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#wait_queue" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="wait_queue"><h2>Kolejki procesów oczekujących</h2>
+        <ul>
+            <li>w kolejkach procesów oczekujących umieszczane są te procesy, które zostają wstrzymane w oczekiwaniu na zajście konkretnego zdarzenia - z każdym takim zdarzeniem związana jest oddzielna kolejka<br><br>
+            <li>element kolejki procesów oczekujących zaimplementowany jest jako struktura <code>wait_queue_t</code> zawierająca
+                <ul class="1">
+                    <li>wskaźnik do struktury <code>task_struct</code>
+                    <li>strukturę <code>list_head</code>
+                    <li>pole flag
+                </ul><br><br>
+            <li>istnieje specjalna struktura <code>wait_queue_head_t</code>, reprezentująca głowę kolejki, zawierająca
+                <ul class="1">
+                    <li>strukturę <code>list_head</code>
+                    <li>zamek kolejki, używany przy dodawaniu i usuwaniu elementów
+                </ul><br><br>
+            <li>jedyną flagą zdefiniowaną dla elementu kolejki jest <code>WQ_FLAG_EXCLUSIVE</code><br><br>
+        </ul>
+
+<!-- algorytm add_wait_queue (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#add_wait_queue" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="add_wait_queue"><h4>Algorytm add_wait_queue</h4>
+        <ul>
+            <li>istnieją dwie wersję <code>add_wait_queue()</code>:
+                <ul class="1">
+                    <li><code>add_wait_queue()</code> - wstawia element na początek kolejki bez ustawiania flagi <code>WQ_FLAG_EXCLUSIVE</code>
+                    <li><code>add_wait_queue_exclusive()</code> - wstawia element na koniec kolejki ustawiając flagę <code>WQ_FLAG_EXCLUSIVE</code>
+                </ul><br><br>
+            <li>schemat algorytmu:<br><br>
+                <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                    <tr><td><b>wejście:</b></td><td>&nbsp;</td><td align="right"><code>q</code></td><td>&nbsp;</td><td>- kolejka procesów oczekujących</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td align="right"><code>wait</code></td><td>&nbsp;</td><td>- element kolejki, który ma zostać wstawiony</td></tr>
+                </table><br>
+                <ul class="1">
+                    <li><code>add_wait_queue(q, wait):</code><br><br>
+                        <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                            <tr><td class="nl">1:</td><td>&nbsp;</td><td>wyzeruj flagę <code>WQ_FLAG_EXCLUSIVE</code> w <code>wait</code></td></tr>
+                            <tr><td class="nl">2:</td><td>&nbsp;</td><td>wywołaj <code>__add_wait_queue(q, wait)</code></td></tr>
+                        </table><br>
+                    <li><code>add_wait_queue_exclusive(q, wait)</code><br><br>
+                        <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                            <tr><td class="nl">1:</td><td>&nbsp;</td><td>ustaw flagę <code>WQ_FLAG_EXCLUSIVE</code> w <code>wait</code></td></tr>
+                            <tr><td class="nl">2:</td><td>&nbsp;</td><td>wywołaj <code>__add_wait_queue_tail(q, wait)</code></td></tr>
+                        </table><br>
+                 </ul>
+            <li>wywołania operacji na kolejce procesów oczekujących w liniach 2 odbywają się przy zablokowanych przerwaniach<br><br>
+            <li><code>__add_wait_queue()</code> i <code>__add_wait_queue_tail()</code> wywołują odpowiednio <code>list_add()</code> i <code>list_add_tail()</code><br><br>
+            <li>użycie <code>add_wait_queue()</code> i <code>add_wait_queue_exclusive()</code> gwarantuje specyficzny układ procesów w kolejce:<br><center><img src="res/wq.jpg"></center>
+        </ul>
+
+<!-- algorytm remove_wait_queue (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#remove_wait_queue" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="remove_wait_queue"><h4>Algorytm remove_wait_queue</h4>
+        <ul>
+            <li><code>remove_wait_queue()</code> sprowadza się do wywołania (z wyłączonymi przerwaniami) <code>__remove_wait_queue()</code>, które z kolei ogranicza się do wywołania <code>list_del()</code>
+        </ul>
+
+<!-- zmiany stanu procesu (MM) -->
+        <hr noshade>
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#zmiany_stanu" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="zmiany_stanu"><h2>Zmiany stanu procesu</h2>
+        <center><img src="res/stany.jpg"></center>
+        <ul>
+            <li><code><b>TASK_RUNNING</b></code> - proces wykonuje się, albo czeka na wykonanie<br><br>
+            <li><code><b>TASK_INTERRUPTIBLE</b></code> - proces wstrzymany w oczekiwaniu na zajście warunku (np. na zwolnienie się zasobu). Może też zostać obudzony przez przerwania sprzętowe albo sygnały<br><br>
+            <li><code><b>TASK_UNINTERRUPTIBLE</b></code> - proces wstrzymany w oczekiwaniu na zajście warunku, sygnały nie zmieniają jego stanu<br><br>
+            <li><code><b>TASK_STOPPED</b></code> - proces zatrzymany na skutek otrzymania sygnału <code>SIGSTOP</code>, <code>SIGTSTP</code>, <code>SIGTTIN</code> lub <code>SIGTTOU</code>, albo dowolnego sygnału, jeśli jest monitorowany przez inny proces (np. przez debugger)<br><br>
+            <li><code><b>TASK_ZOMBIE</b></code> - proces zakończył się, ale jego rodzic nie wywołał jeszcze funkcji <code>wait()</code>
+        </ul>
+        <br><br>
+
+<!-- algorytm sleep_on (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#sleep_on" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="sleep_on"><h4>Algorytm sleep_on</h4>
+        <ul>
+            <li>służy do usypiania bieżącego procesu we wskazanej kolejce procesów oczekujących<br><br>
+            <li>istnieją cztery wersje <code>sleep_on()</code>:
+                <ul class="1">
+                    <li><code>sleep_on()</code> - usypia proces w stanie <code>TASK_UNINTERRUPTIBLE</code>
+                    <li><code>interruptible_sleep_on()</code> - usypia proces w stanie <code>TASK_INTERRUPTIBLE</code>
+                    <li><code>sleep_on_timeout()</code> - usypia proces w stanie <code>TASK_UNINTERRUPTIBLE</code> na określony w parametrze czas
+                    <li><code>interruptible_sleep_on_timeout()</code> - usypia proces w stanie <code>TASK_INTERRUPTIBLE</code> na określony w parametrze czas
+                </ul><br><br>
+            <li>schemat algorytmu:<br><br>
+                <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                    <tr><td><b>wejście:</b></td><td>&nbsp;</td><td align="right"><code>q</code></td><td>&nbsp;</td><td>- kolejka na której proces ma zasnąć</td></tr>
+                    <tr><td><b>środowisko:</b></td><td>&nbsp;</td><td align="right"><code>current</code></td><td>&nbsp;</td><td>- bieżący proces (to jego usypiamy)</td></tr>
+                </table><br>
+                <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                    <tr><td class="nl">1:</td><td>&nbsp;</td><td>zainicjalizuj <code>wait</code> - nowy element kolejki procesów oczekujących wskazujący na <code>current</code></td></tr>
+                    <tr><td class="nl">2:</td><td>&nbsp;</td><td>ustaw stan aktualnego procesu</td></tr>
+                    <tr><td class="nl">3:</td><td>&nbsp;</td><td>wywołaj <code>__add_wait_queue(q, wait)</code></td></tr>
+                    <tr><td class="nl">4:</td><td>&nbsp;</td><td>wywołaj odpowiednią wersję <code>schedule()</code></td></tr>
+                    <tr><td class="nl">5:</td><td>&nbsp;</td><td>wywołaj <code>__remove_wait_queue(q, wait)</code></td></tr>
+                </table><br>
+            <li>stan ustawiany w linii 2 zależy od tego, czy wołamy wersję <code>interruptible_</code>, czy nie<br><br>
+            <li>wersja schedule w linii 4 zależy od tego, czy wołamy wersję <code>_timeout</code>, czy nie. W pierwszym wypadku wywołana zostanie funkcja <code>schedule_timeout()</code>, w drugim <code>schedule()</code><br><br>
+            <li>wywołania operacji na kolejce procesów oczekujących w liniach 3 i 5 odbywają się przy zablokowanych przerwaniach<br><br>
+            <li><code>__add_wait_queue()</code> i <code>__remove_wait_queue()</code> wywołują odpowiednio <code>list_add()</code> i <code>list_del()</code>;<br>
+                uwaga: wykorzystane zostały funkcje "wewnętrzne", nie <code>add_wait_queue()</code> i <code>remove_wait_queue()</code><br><br>
+            <li>proces uśpiony przy użyciu <code>sleep_on()</code> umieszczany jest na początku kolejki <code>q</code> i nie ma ustawionej flagi <code>WQ_FLAG_EXCLUSIVE</code>
+        </ul>
+        <br>
+
+<!-- algorytm try_to_wake_up (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#try_to_wake_up" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="try_to_wake_up"><h4>Algorytm try_to_wake_up</h4>
+        <ul>
+            <li>służy do budzenia wskazanego procesu<br><br>
+            <li><code>try_to_wake_up(p, synchronous)</code> ustawia stan procesu <code>p</code> na <code>TASK_RUNNING</code>, wstawia <code>p</code> do kolejki procesów gotowych (o ile się na niej jeszcze nie znajduje) i (w zależności od wartości argumentu <code>synchronous</code>) wywołuje <code>reschedule_idle(p)</code><br><br>
+            <li>zwraca <code>0</code> jeśli <code>p</code> był już w kolejce procesów gotowych, <code>1</code> w przeciwnym przypadku<br><br>
+            <li>schemat algorytmu:<br><br>
+                <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                    <tr><td><b>wejście:</b></td><td>&nbsp;</td><td align="right"><code>p</code></td><td>&nbsp;</td><td>- proces do obudzenia</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td align="right"><code>synchronous</code></td><td>&nbsp;</td><td>- tryb synchroniczny/asynchroniczny</td></tr>
+                </table><br>
+                <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                    <tr><td class="nl">1:</td><td>&nbsp;</td><td>ustaw stan <code>p</code> na <code>TASK_RUNNING</code></td></tr>
+                    <tr><td class="nl">2:</td><td>&nbsp;</td><td><b>jeśli</b> <code>p</code> znajduje się w kolejce procesów gotowych</td></tr>
+                    <tr><td class="nl">3:</td><td>&nbsp;</td><td>&nbsp;&nbsp;zwróć <code>0</code></td></tr>
+                    <tr><td class="nl">4:</td><td>&nbsp;</td><td><b>koniec jeśli</b></td></tr>
+                    <tr><td class="nl">5:</td><td>&nbsp;</td><td>dodaj <code>p</code> do kolejki procesów gotowych</td></tr>
+                    <tr><td class="nl">6:</td><td>&nbsp;</td><td><b>jeśli</b> (<code>synchronous == 0</code>) lub (<code>p</code> nie może się wykonywać na następnym z kolei procesorze)</td></tr>
+                    <tr><td class="nl">7:</td><td>&nbsp;</td><td>&nbsp;&nbsp;wywołaj <code>reschedule_idle(p)</code></td></tr>
+                    <tr><td class="nl">8:</td><td>&nbsp;</td><td><b>koniec jeśli</b></td></tr>
+                    <tr><td class="nl">9:</td><td>&nbsp;</td><td>zwróć <code>1</code></td></tr>
+                </table><br>
+            <li>algorytm wykonuje się przy wyłączonych przerwaniach (zajęty zostaje zamek kolejki procesów gotowych)<br><br>
+            <li>w konfiguracji jednoprocesorowej warunek drugi z linii 6 jest zawsze prawdziwy, w związku z czym <code>reschedule_idle(p)</code> jest zawsze wykonywane<br><br>
+        </ul>
+        <br><br>
+
+        
+<!-- algorytm wake_up (MM) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#wake_up" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Maciej Makowski
+                </td>
+            </tr>
+        </table>
+        <a name="wake_up"><h4>Algorytm wake_up</h4>
+        <ul>
+            <li>makra z rodziny <code>wake_up()</code> służą do budzenia procesów z zadanej kolejki<br><br>
+            <li>istnieje 10 odmian <code>wake_up()</code>:
+                <ul class="1">
+                    <li><code>wake_up(q)</code>
+                    <li><code>wake_up_nr(q, nr)</code>
+                    <li><code>wake_up_all(q)</code>
+                    <li><code>wake_up_sync(q)</code>
+                    <li><code>wake_up_sync_nr(q, nr)</code>
+                    <li><code>wake_up_interruptible(q)</code>
+                    <li><code>wake_up_interruptible_nr(q, nr)</code>
+                    <li><code>wake_up_interruptible_all(q)</code>
+                    <li><code>wake_up_interruptible_sync(q)</code>
+                    <li><code>wake_up_interruptible_sync_nr(q, nr)</code><br>
+                        <a class="comment">w Linuksie 2.4.7 w tej makrodefinicji jest błąd - brak parametru nr. Nie zostało to poprawione również w najnowszej wersji 2.4.13</a>
+                </ul><br><br>
+            <li>znaczenie sufiksów:<br><br>
+                <ul class="1">
+                    <li><code>_interruptible</code> - te wersje <code>wake_up()</code> budzą tylko procesy znajdujące się w stanie <code>TASK_INTERRUPTIBLE</code>; pozostałe budzą zarówno procesy w stanie <code>TASK_INTERRUPTIBLE</code> jak i <code>TASK_UNINTERRUPTIBLE</code><br><br>
+                    <li><code>_all</code> - budzi wszystkie procesy (w odpowiednich stanach) bez względu na to, czy mają ustawioną flagę <code>WQ_FLAG_EXCLUSIVE</code><br><br>
+                    <li><code>_nr</code> - budzi wszystkie procesy bez ustawionej flagi <code>WQ_FLAG_EXCLUSIVE</code> oraz podaną jako drugi argument liczbę procesów z ustawioną tą flagą<br><br>
+                    <li><code>_sync</code> - umożliwia obudzenie procesu bez dokonywania przeszeregowania (bez wywoływania <code>reschedule_idle()</code> na rzecz tego procesu) w systemach wieloprocesorowych<br><br>
+                    <li>jeśli nie ma ani sufiksu <code>_all</code>, ani <code>_nr</code>, to budzone są wszystkie procesy nie oznaczone flagą <code>WQ_FLAG_EXCLUSIVE</code> i dokładnie jeden proces z ustawioną tą flagą (o ile istnieje)
+                </ul><br><br>
+            <li>wszystkie makra <code>wake_up()</code> sprowadzają się do wywołania funkcji <code>__wake_up_common(q, mode, nr_exclusive, sync)</code> z odpowiednimi parametrami<br><br>
+            <li>schemat algorytmu <code>__wake_up_common()</code>:<br><br>
+                <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                    <tr><td><b>wejście:</b></td><td>&nbsp;</td><td align="right"><code>q</code></td><td>&nbsp;</td><td>- kolejka procesów oczekujących</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td align="right"><code>mode</code></td><td>&nbsp;</td><td>- stany procesów, które mają być budzone</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td align="right"><code>nr_exclusive</code></td><td>&nbsp;</td><td>- liczba procesów z ustawioną flagą <code>WQ_FLAG_EXCLUSIVE</code> do obudzenia</td></tr>
+                    <tr><td>&nbsp;</td><td>&nbsp;</td><td align="right"><code>sync</code></td><td>&nbsp;</td><td>- tryb synchroniczny/asynchroniczny (argument dla <code>try_to_wake_up()</code>)</td></tr>
+                </table><br>
+                <table border="0" class="pcode" cellpadding="0" cellspacing="0">
+                    <tr><td class="nl">1:</td><td>&nbsp;</td><td><b>powtarzaj</b> dla każdego procesu <code>p</code> w kolejce <code>q</code></td></tr>
+                    <tr><td class="nl">2:</td><td>&nbsp;</td><td>&nbsp;&nbsp;<b>jeśli</b> stan <code>p</code> zgadza się z <code>mode</code></td></tr>
+                    <tr><td class="nl">3:</td><td>&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<b>jeśli</b> wywołanie <code>try_to_wake_up(p, sync)</code> zwróciło <code>1</code></td></tr>
+                    <tr><td class="nl">4:</td><td>&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>jeśli</b> <code>p</code> ma ustawioną flagę <code>WQ_FLAG_EXCLUSIVE</code></td></tr>
+                    <tr><td class="nl">5:</td><td>&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;zmniejsz <code>nr_exclusive</code> o 1</td></tr>
+                    <tr><td class="nl">6:</td><td>&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>jeśli</b> <code>nr_exclusive == 0</code></td></tr>
+                    <tr><td class="nl">7:</td><td>&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;zakończ</td></tr>
+                    <tr><td class="nl">8:</td><td>&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>koniec jeśli</b></td></tr>
+                    <tr><td class="nl">9:</td><td>&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>koniec jeśli</b><br></td></tr>
+                    <tr><td class="nl">10:</td><td>&nbsp;</td><td>&nbsp;&nbsp;&nbsp;&nbsp;<b>koniec jeśli</b><br></td></tr>
+                    <tr><td class="nl">11:</td><td>&nbsp;</td><td>&nbsp;&nbsp;<b>koniec jeśli</b><br></td></tr>
+                    <tr><td class="nl">12:</td><td>&nbsp;</td><td><b>koniec powtarzaj</b><br></td></tr>
+                </table><br>
+            <li>w rzeczywistym kodzie linie 3 - 6 to jeden warunek logiczny (dzięki leniwemu wyliczaniu wartości logicznych w C)<br><br>
+            <li>proces budzony nie jest tu usuwany z <code>q</code> - usuwanie odbywa się w <code>sleep_on()</code>
+        </ul>
+        <br><br>
+
+<!-- szeregowanie procesów (AH) -->
+        <hr noshade>
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#szeregowanie" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="szeregowanie"><h2>Szeregowanie procesów</h2>
+        <p>Algorytm szeregujący dzieli czas procesora na epoki. Na początku każdej z nich każdemu procesowi jest przypisany pewien kwant czasu. Proces w trakcie jednej epoki może mieć dostęp do procesora wielokrotnie, dopóki nie skończy mu się jego kwant. Przy każdym tyknięciu zegara, bieżącemu procesowi odejmuje się jedynkę od pozostałego kwantu czasu. Gdy cały kwant jest skończony proces jest wywłaszczany. Epoka kończy się, gdy wszystkie procesy gotowe do działania mają już wykorzystany swój czas, wtedy następuje przeliczenie kwantów (dla każdego procesu w systemie) i rozpoczęcie nowej epoki.</p>
+        <br><br>
+        
+<!-- typy procesów (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#typy_procesow" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="typy_procesow"><h4>Typy procesów</h4>
+        <p>Ze względu na czas reakcji na określone zdarzenie, procesy można podzielić na następujące grupy:<br>
+        <ul>
+            <li><b>wsadowe</b><br>
+                Nie wymagają współpracy z użytkownikiem - pracują w tle. Zwykle posiadają niższy priorytet, powinny więc być osłabiane przez <code>schedule()</code>. Na przykład: kompilatory, mechanizmy baz danych...<br><br>
+            <li><b>interakcyjne</b><br>
+                Wymagają współpracy z użytkownikiem. Rzadko korzystają z procesora, ale jeśli zajdzie taka potrzeba powinny być względnie szybko obudzone. Na przykład: edytory tekstu, powłoki...<br><br>
+            <li><b>czasu rzeczywistego</b><br>
+                Warunkiem ich poprawnego działania jest minimalny czas reakcji na zaistniałe zdarzenie. Procesy te nie mogą być blokowane przez inne zadania. Niestety Linux nie jest całkowicie przystosowany do obsługi tego typu zadań. Przykład: programy służące do obsługi dźwięku, obrazu...<br>
+        </ul></p>
+        <br><br>
+
+<!-- klasy procesów (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#klasy_procesow" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="klasy_procesow"><h4>Klasy procesów</h4>
+        <p>W systemie Linux są zaimplementowane następujące klasy procesów:
+        <ul>
+            <li><b>idle</b><br>
+                Jest to proces o numerze 0, tworzony bez udziału <code>fork()</code>, inicjalizowany makrodefinicjami <code>INIT_TASK</code>. Proces ten cały czas znajduje się w stanie <code>TASK_RUNNING</code> i w przypadku, gdy nie ma nikogo chętnego do pracy on otrzymuje procesor. Gdy tylko pojawia się jakikolwiek gotowy proces idle jest wywłaszczany.<br><br>
+            <li><b>procesy zwykłe</b><br>
+                Do tej klasy zalicza się większość procesów. Większość użytkowników systemu ma prawo tworzyć tylko procesy tej klasy (w przeciwnym przypadku łatwo mogłoby dochodzić do zagłodzenia procesów).<br>
+                Procesy tej klasy są znacznie różnicowane w trakcie szeregowania, ich priorytety są przeliczane dynamicznie, dzięki czemu system jest bardziej sprawiedliwy i zapobiega zagłodzeniu.<br><br>
+            <li><b>procesy czasu rzeczywistego</b><br>
+                Te procesy może tworzyć tylko administrator systemu. Wymagają one natychmiastowej reakcji systemu, więc są znacznie uprzywilejowane w stosunku do pozostałych procesów. Również wśród nich występuje znaczne zróżnicowanie priorytetów (jednakże priorytety są statyczne).<br>
+        </ul></p>
+        <br><br>
+        
+<!-- polityki szeregowania (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#polityki_szeregowania" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="polityki_szeregowania"><h4>Polityki szeregowania</h4>
+        <p>Jądro Linuksa w wersji 2.4.7 <u>teoretycznie</u> implementuje trzy polityki szeregowania. Z czego dwie pierwsze dotyczą tylko procesów czasu rzeczywistego, natomiast trzecia procesów zwykłych:
+        <ul>
+            <li><b>SCHED_FIFO</b><br>
+                Jest to najbardziej niesprawiedliwa polityka, gdyż proces, który zdobył procesor może trzymać go bardzo długo. Na szczęście w praktyce wygląda to inaczej, gdyż procesy często zgłaszają żądania wejścia-wyjścia, oraz same rezygnują z procesora (używając funkcji <code>sched_yield()</code> - niestety jest to tylko <u>teoria</u>, gdyż obecnie funkcja ta nie działa poprawnie). Również proces o wyższym priorytecie (czyli musi to być proces czasu rzeczywistego), który przejdzie do stanu TASK_RUNNING odbierze mu procesor.<br><br>
+            <li><b>SCHED_RR</b><br>
+                W tym przypadku, <u>teoretycznie</u>, procesowi, któremu przyznano procesor jest odmierzany kwant czasu, po którego skończeniu proces jest wywłaszczany i wstawiany na koniec kolejki procesów gotowych, ale już z nowym kwantem - dzięki czemu planista daje szansę innym procesom czasu rzeczywistego o tym samym priorytecie. Proces traci też procesor w tych samych przypadkach, co w polityce SCHED_FIFO.<br>
+                (Takie działanie jest tylko teorią, gdyż w obecnej implementacji proces jest usuwany na koniec kolejki procesów gotowych, jednakże jednocześnie nie oddaje on procesora. Z tego też względu procesy szeregowane tą polityką nie są lepsze od SCHED_FIFO, a nawet ich obsługa jest bardziej kosztowna). <br><br>
+                <i>Przykład:</i><br>
+                Załóżmy, że w systemie pojawiały się kolejno, w pewnych odstępach czasu, cztery procesy czasu rzeczywistego <b>R1</b>, <b>F</b>, <b>R2</b> i <b>R3</b>. Procesy <b>R1</b>, <b>R2</b> i <b>R3</b> są szeregowane za pomocą strategii SCHED_RR, natomiast proces <b>F</b> za pomocą SCHED_FIFO.<br>
+                W jakiej kolejności będą działać teoretycznie te procesy (w tym momencie pomijamy szczegóły dotyczące kwantów czasu)? <br>
+                Najpierw procesor otrzyma proces <b>R1</b>, po pewnym czasie zostanie on wywłaszczony i wstawiony na koniec kolejki, wtedy pracę rozpocznie <b>F</b>, który nie odda procesora, aż do momentu zakończenia pracy. Wówczas na zmianę pracować będą procesy <b>R2</b>, <b>R3</b> i <b>R1</b>, aż do momentu zakończenia pracy przez każdego z nich.<br><br>
+            <li><b>SCHED_OTHER</b><br>
+                W tym przypadku priorytet procesu jest dynamiczny, tzn. zmienia się w czasie działania procesu. W trakcie jego przeliczania brane są pod uwagę dodatkowe okoliczności (patrz funkcja <code>goodness()</code>). Proces szeregowany zgodnie z tą polityką może stracić procesor, jeżeli:
+                <ul>
+                    <li>Zgłosi żądanie wejścia-wyjścia
+                    <li>Dobrowolnie odda procesor (funkcja <code>sched_yield()</code>)
+                    <li>Zgłosi się proces czasu rzeczywistego
+                    <li>Zgłosi się proces zwykły
+                </ul>
+        </ul></p>
+        <br><br>    
+
+<!-- wywołanie funkcji schedule (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#wywolanie_schedule" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="wywolanie_schedule"><h4>Wywołanie funkcji schedule</h4>
+        <p>Funkcja ta jest zasadniczą częścią szeregowania procesów w systemie Linux. Jest ona wywoływana na dwa sposoby: bezpośrednio i pośrednio.<br><br>
+        <ul>
+            <li>Wywołanie bezpośrednie<br><br>
+                Każdorazowo planista jest wywoływany po zakończeniu procedury obsługi przerwania zegarowego (dzieje się to w funkcji <code>ret_from_sys_call</code> w pliku entry.S). Także bezpośrednio w sytuacji, gdy zaistnieje potrzeba zablokowania aktualnego procesu w trybie natychmiastowym, gdyż wymagane przez niego zasoby nie są dostępne (Jest to z reguły wykonywane przez przekroczenie czasu procesu - <code>schedule_timeout()</code>). Również funkcje <code>sleep_on()</code> oraz <code>interruptible_sleep_on()</code> wywołują <code>schedule()</code>. Jednakże w pierwszym przypadku po odzyskaniu procesora jest sprawdzana dostępność zasobów, a w drugim już nie.<br>
+                Również wiele sterowników urządzeń bezpośrednio wywołuje omawianą funkcję.<br><br>
+            <li>Wywołanie pośrednie<br><br>
+                Wywołanie to polega na ustawieniu flagi <code>need_resched</code> aktywnego procesu. Jest to robione, gdy:
+                <ul>
+                    <li>Proces wykorzystał przyznany mu kwant czasu (warunek ten jest sprawdzany w funkcji <code>update_process_times()</code>)
+                    <li>Obudzony proces ma wyższy priorytet od bieżącego. Sprawdza to funkcja <code>reschedule_idle()</code>
+                    <li>Wykonywane jest wywołanie systemowe <code>sched_setscheduler()</code> lub <code>sched_yield()</code>
+                </ul>
+        </ul></p>
+        <br><br>
+
+<!-- struktury danych związane z szeregowaniem (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#sd_szeregowania" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="sd_szeregowania"><h4>Struktury danych związane z szeregowaniem</h4>
+        <ul>
+            <li>makro <code>current</code> - wskaźnik do procesu, który posiada procesor;
+        </ul>
+        <p>Pola struktury <code>task_struct</code>:
+        <ul>
+            <li><code>state</code> - stan, w jakim znajduje się proces;<br><br>
+            <li><code>need_resched</code> - jeśli ta flaga jest ustawiona, oznacza to, że potrzebne jest wykonanie przeszeregowania procesów - wywołanie funkcji <code>schedule()</code>;<br><br> 
+            <li><code>policy</code> - polityka szeregowania;<br><br>
+            <li><code>rt_priority</code> - statyczny priorytet procesów czasu rzeczywistego; przyjmuje wartości od 0 (proces zwykły) do 99 (najwyższy priorytet);<br><br>
+            <li><code>nice</code> - wpływa na długość kwantu czasu przyznanego procesowi, zmienia się ona od -20 (najwyższy priorytet) do +19 (najniższy priorytet);<br><br>
+            <li><code>counter</code> - liczba tyknięć zegara, które pozostały procesowi do zakończenia jego kwantu czasu; wywołanie funkcji <code>update_process_times()</code> zmniejsza o jeden zawartość tego pola;
+        </ul>
+        <br><br>
+
+<!-- makro NICE_TO_TICKS (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#NICE_TO_TICKS" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="NICE_TO_TICKS"><h4>Makro NICE_TO_TICKS</h4>
+        <p>Powyższe makro jest zdefiniowane w następujący sposób:<br><br>
+        <code>#define NICE_TO_TICKS(nice)	(TICK_SCALE(20-(nice))+1)</code><br><br>
+        Makro <code>TICK_SCALE</code> zależy od wartości zmiennej HZ, gdzie HZ jest stałą, zależną od architektury komputera, określającą częstotliwość przerwań zegara. Dla architektury Intela i386 HZ wynosi 100. Z tego też względu w naszym przypadku makro <code>TICK_SCALE(x)</code> jest zdefiniowane jako <code>x &gt;&gt; 2</code>. Z tego wynika, że zwraca ono wartość <code>((20-nice) &gt;&gt; 2) + 1</code>.<br><br>
+        <i>Przykład:</i></p>
+        <ol>
+            <li><br><i>Jeżeli proces ma wartość nice ustawioną na -20, wtedy:<br>
+                20-(-20)=40, w systemie binarnym: 101000. Następnie 101000 &gt;&gt; 2 otrzymujemy: 001010 czyli 8+2=10. Jeszcze 10+1=11, czyli dla wartości nice=-20 nasze makro zwróci wartość 11.</i>
+            <li><br><i>Jeżeli proces ma wartość nice ustawioną na 0, wtedy:<br>
+                20-(0)=20, w systemie binarnym: 010100. Następnie 010100 &gt;&gt; 2 otrzymujemy: 000101 czyli 4+1=5. Jeszcze 5+1=6, czyli dla wartości nice=0 nasze makro zwróci wartość 6</i>
+            <li><br><i>Jeżeli proces ma wartość nice ustawioną na +19, wtedy:<br>
+                20-(+19)=1, w systemie binarnym: 000001. Następnie 000001 &gt;&gt; 2 otrzymujemy: 000000 czyli 0. Jeszcze 0+1=1, czyli dla wartości nice=+19 nasze makro zwróci wartość 1.</i>
+        </ol>
+        <p>Stąd wniosek, że <code>NICE_TO_TICKS</code> zwraca wartości od +11 do +1.</p>
+        <a class="comment">Ciekawostka:  W starszych wersjach Linuksa makro to nie występowało, tak samo jak wartość nice, w miejsce której było priority. W trakcie przeliczania dynamicznego priorytetu w schedule() dodawaliśmy po prostu priority (zamiast NICE_TO_TICKS(nice)).</a>
+        <br><br>
+        
+<!-- funkcja goodness (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#goodness" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="goodness"><h4>Funkcja goodness</h4>
+        <p>Funkcja decyduje jak pożądany jest proces. &quot;Ważność&quot; procesu zależy od jego typu: wsadowy, interakcyjny, czy czasu rzeczywistego oraz od aktualnego procesora.<br><br>
+        <center>
+        <table border="0">
+            <tr valign="top">
+                <td><img src="res/sched1.jpg"></td><td width="30">&nbsp;</td>
+                <td><img src="res/sched2.jpg"></td><td width="30">&nbsp;</td>
+                <td><img src="res/sched3.jpg"></td><td width="30">&nbsp;</td>
+                <td><img src="res/sched4.jpg"></td>
+            </tr>
+        </table>
+        </center>
+        <ol>
+            <li>Jeżeli proces ma ustawioną flagę SCHED_YIELD oznacza to, iż sam dobrowolnie zrezygnował z procesora, z tego względu jego waga jest ustawiana na -1, co jest równoznaczne temu, iż ten proces na pewno nie otrzyma procesora.<br><br>
+            <li>Jeżeli proces jest typu SCHED_OTHER i skończył już swój kwant czasu ustawiana jest mu waga = 0. Natomiast, gdy jego pole <code>counter</code> jest różne od 0, wagą staje się wartość tego pola. Jednakże w pewnych przypadkach <code>goodness()</code> jest bardziej przychylna dla danego procesu (dodatkowo zwiększa jego wagę), tzn. wtedy, jeżeli proces pracował poprzednio na tym procesorze, waga jego jest dodatkowo zwiększana o stałą wartość równą PROC_CHANGE_PENALTY (ustawioną na stałe na 15); lub też, jeżeli proces ma tą samą przestrzeń adresową co bieżący, jego waga jest zwiększana o 1. Na zakończenie do wagi dodawana jest wartość (20 - <code>nice</code>). <br><br>
+            <li>Jeżeli proces jest procesem czasu rzeczywistego jego wagą staje się 1000 zwiększony o priorytet czasu rzeczywistego, czyli <code>rt_priority</code>.
+        </ol></p>
+        <p><i>Wnioski</i>: Waga dodatnia oznacza, że proces jest dobrym kandydatem na otrzymanie procesora (im wyższa waga tym chętniej przyznajemy CPU), natomiast waga zerowa, bądź ujemna oznacza, że proces nie może otrzymać procesora, gdyż nie ma na to odpowiednich warunków.
+        </p><br><br>
+
+<!-- działanie funkcji szeregującej (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#dzialanie_szereg" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="dzialanie_szereg"><h4>Działanie funkcji szeregującej</h4>
+        <p>Funkcja <code>schedule()</code> działa według następującego algorytmu:</p>
+        <ol>
+            <li>Sprawdza, czy została wywołana podczas obsługi przerwania. Jeśli jest to prawdą wypisuje komunikat o błędzie i kończy swoje działanie. Takie wywołanie jest poważnym zagrożeniem dla systemu. W <code>schedule()</code> gwarantujemy, że przerwania są włączone. (Jednakże są momenty, w których musimy je wyłączyć).<br><br>
+            <li>Jeśli obecny proces jest procesem czasu rzeczywistego, szeregowanym według strategii Round Robin (RR), któremu skończył się właśnie kwant czasu, to przyznawany jest mu nowy (wyliczany z makra <code>NICE_TO_TICKS()</code>) oraz taki proces jest ustawiany na końcu kolejki procesów gotowych.<br><br>
+            <li>Jeśli obecny proces jest w stanie TASK_INTERRUPTIBLE <code>schedule()</code> sprawdza, czy nadszedł nieblokowany sygnał, jeżeli tak zmienia mu stan na TASK_RUNNING.<br>
+                Następnie, jeżeli proces nie jest w stanie TASK_RUNNING usuwa go z kolejki procesów gotowych. Zeruje wartość pola need_resched bieżącego procesu.<br><br>
+            <li>Funkcja dokonuje wyboru najbardziej odpowiedniego procesu do przyznania mu procesora. Korzysta przy tym z funkcji <code>goodness()</code> opisanej powyżej. Wyboru dokonuje w kilku krokach.<br><br>
+                Pierwszym z możliwych kandydatów (który zawsze istnieje) jest proces <code>idle</code>. Jednakże otrzymuje on procesor tylko pod warunkiem, że w danej chwili nikt inny nie jest gotowy do działania. Z tego też względu jego &quot;ważność&quot; jest ustawiana na -1000 (Pozostałe procesy otrzymują wyższą wagę, co zapewnia poprawne działanie).<br><br>
+                Następnie <code>schedule()</code> sprawdza, czy bieżący proces, (pod warunkiem, że jest w stanie TASK_RUNNING) mógłby otrzymać jeszcze raz procesor, (badane jest, czy dany proces może pracować na tym procesorze poprzez sprawdzenie stanu jego pola <code>cpus_allowed</code> struktury <code>task_struct</code>), jeżeli tak - jest uznawany za lepszego kandydata aniżeli <code>idle</code> i jest brany jako pierwszy pod uwagę (<code>schedule()</code> zapamiętuje jego wagę). Dzięki tej operacji w przypadku, gdy kilka procesów dostanie najwyższą wartość - w tym także bieżący, to jemu zostanie przyznany procesor.<br>
+                Jednakże to rozwiązanie jest w pewnych sytuacjach błędne i nie spełnia przyjętych wymogów. Dlaczego??? <a class="comment">(Patrz rozwiązanie zadań)</a><br><br>
+                Teraz w celu znalezienia najlepszego pretendenta do pracy planista zaczyna przechodzenie kolejki procesów gotowych każdorazowo od początku (zawsze najpierw sprawdza, czy dany proces może pracować na danym procesorze). Przy czym stara się zapamiętać dotychczas najlepszego kandydata oraz jego wagę (przyznawaną przez <code>goodness()</code>. Waga kolejnych procesów jest porównywana z ostatnio zapamiętaną wartością, jeżeli jest wyższa to oznacza, ze ten proces jest lepszym kandydatem do procesora). 
+<pre>	
+list_for_each(tmp, &runqueue_head) {
+		p = list_entry(tmp, struct task_struct, run_list);
+		if (can_schedule(p, this_cpu)) {
+			int weight = goodness(p, this_cpu, prev-&gt;active_mm);
+			if (weight &gt; c)
+				c = weight, next = p;
+		}
+	}
+</pre>
+                Po przejściu powyższej pętli mogą wystąpić trzy różne sytuacje. Po pierwsze może się okazać, że znaleźliśmy proces, który powinien otrzymać CPU - czyli zapamiętana wartość jest dodatnia. Po drugie może ona mieć wartość -1000, co jest równoznaczne, że żaden proces nie chce lub nie może działać, więc proces jest przyznany <code>idle</code>. (<code>goodness()</code> zwraca wartość 0 lub >0, dla każdego prawidłowego procesu, czyli gdyby w naszej kolejce <code>runqueue</code>, był jakiś odpowiedni proces to pamiętana wartość byłaby nieujemna). I po trzecie może być sytuacja, w której najwyższą wartością okazało się zero - a to oznacza, że wszystkie procesy skończyły już swoje kwanty czasu. W tej sytuacji należy przyznać wszystkim procesom nowe kwanty czasu (nie tylko tym z listy procesów bieżących). W tym celu korzystamy z następującego algorytmu:
+<pre>
+    for_each_task(p)
+            p-&gt;counter = (p-&gt;counter &gt;&gt; 1) + NICE_TO_TICKS(p-&gt;nice);
+</pre>
+                Czyli do przeliczenia priorytetów dynamicznych, potrzebna jest znajomość czasu, który pozostał procesowi (wartość counter) z ostatniego przydziału oraz wartość wyliczona z priorytetu bazowego przy pomocy makra NICE_TO_TICKS.<br>
+                Interesujące jest, że przed przeliczeniem priorytetów dynamicznych <code>schedule()</code> zdejmuje blokadę z <code>runqueue</code>. Wydaje się to trochę dziwne, jednakże trzeba zauważyć, że przeliczeniu podlegają absolutnie wszystkie procesy, co może zająć stosunkowo dużo czasu, podczas gdy inny procesor mógłby chcieć wywołać funkcję <code>schedule()</code>, w celu wybrania najlepszego procesu na ten procesor.<br><br>
+                Po przeliczeniu priorytetów, <code>schedule()</code> wraca z powrotem na początek punktu 4. <br><br>
+            <li>W tym momencie wiemy już, który proces będzie działał na tym procesorze, z tego też względu ustawiamy zmienne struktury <code>task_struct: has_cpu</code> na 1 i <code>processor</code> na <code>this_cpu</code>. <br><br>
+            <li>Przygotowanie do zamiany procesów - ustawianie odpowiednich zmiennych do <code>switch_to()</code>, przełączenie kontekstu.<br><br>
+            <li>Wywołanie funkcji <code>reschedule_idle()</code>, która to sprząta wszelkie pozostałe, niepoustawiane znaczniki po schedulerze (np. wyłącza flagę SCHED_YIELD, a w przypadku SMP ustawia pola dotyczące procesora). Funkcja ta w systemie wieloprocesorowym wywołuje też funkcję <code>reschedule_idle()</code> (oczywiście pod warunkiem, że wywłaszczony proces nie był procesem <code>idle</code>). <code>reschedule_idle()</code> jest bardzo ważną funkcją - często jest wywoływana w celu ustawienia flagi <code>need_resched</code> (w systemie jednoprocesorowym dotyczy to przypadku, gdy proces, dla którego ją wywołano ma większy priorytet od bieżącego). W Linuksie SMP sprawdza, czy proces, któremu właśnie odebrano procesor, nie mógłby wywłaszczyć kogoś z innego CPU.
+        </ol>
+        <center><img src="res/sched_gl.jpg"></center>
+        <br><br>
+
+<!-- funkcje systemowe związane z szeregowaniem (AH) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#fun_sys_szereg" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Agnieszka Harasimczuk
+                </td>
+            </tr>
+        </table>
+        <a name="fun_sys_szereg"><h4>Funkcje systemowe związane z szeregowaniem</h4>
+        <p>Poniższe funkcje służą do zmiany priorytetów procesów i ich polityki szeregowania, oraz do odczytywania tych danych. Każdy użytkownik może dowolnie obniżać priorytety swoich procesów, ale tylko administrator może także je podwyższać.</p>
+        <ul>
+            <li><code>nice(int increment)</code><br>
+                Funkcja ta służy procesowi do zmiany jego priorytetu bazowego (<code>nice</code>). <code>Increment</code> może przyjmować dowolne wartości całkowite, ale jeżeli jest >+40, to zostaje obcięte do +40, natomiast, gdy jest <-40 zostaje obcięte do -40. Po wywołaniu tej funkcji pole nice ma wartość <code>(nice + increment)</code> (ale oczywiście obcinamy to do zakresu -20...+19). Czyli im wartość increment jest mniejsza, tym bardziej podwyższamy priorytet.<br><br>
+            <li><code>sched_yield(void)</code><br>
+                Proces, który wywołuje tą funkcję chce dobrowolnie oddać procesor, bez usypiania. Z tego też względu, jeżeli nie jest jedynym, który może pracować (tzn. istnieje jeszcze przynajmniej jeden proces na liście <code>runqueue</code>, o stanie TASK_RUNNING, który nie pracuje na żadnym innym procesorze), ustawia znacznik <code>need_resched</code>, a w przypadku procesu zwykłego zaznacza również, że wywołał tą funkcję, tzn. ustawia w polu <code>policy</code> dodatkowo flagę SCHED_YIELD.<br>
+                Uwaga!!! Teoretycznie funkcja powinna umożliwiać procesom czasu rzeczywistego dobrowolną rezygnację z procesora. Jednakże nie spełnia ona swojego zadania i taki proces, który wywołał tę funkcję nie zostaje jednak wywłaszczony. <br><br>
+            <li><code>sched_getscheduler(pid_t pid)</code><br>
+                Funkcja zwraca informację o polityce szeregowania danego procesu.<br><br>
+            <li><code>sched_setscheduler(pid_t pid, int policy, struct sched_param *param)</code><br>
+                Funkcja pozwala ustawić dla podanego procesu jego politykę szeregowania oraz statyczny priorytet (<code>rt_priority</code>). Proces taki jest przenoszony na początek kolejki procesów gotowych i jest ustawiana flaga <code>need_resched</code>.<br><br>
+            <li><code>sched_getparam(pid_t pid, struct sched_param *param)</code><br>
+                Zwraca parametry szeregowania procesu (tylko wartość pola <code>rt_priority</code>).<br><br>
+            <li><code>sched_setparam(pid_t pid, struct sched_param *param)</code>
+                Funkcja analogiczna do <code>sched_setscheduler()</code>, tylko nie zmienia priorytetu.<br><br>
+            <li><code>sched_get_priority_min(int policy)</code><br>
+                Funkcja zwraca maksymalny priorytet, jaki może mieć proces o danej polityce szeregowania tzn.: w przypadku SCHED_RR oraz SCHED_FIFO = 99, SCHED_OTHER = 0.<br><br>
+            <li><code>sched_get_priority_max(int policy)</code><br>
+                Funkcja zwraca minimalny priorytet, jaki może mieć proces o danej polityce szeregowania tzn.: w przypadku SCHED_RR oraz SCHED_FIFO = 1, SCHED_OTHER = 0.<br><br>
+            <li><code>sched_rr_get_interval(pid_t pid, struct timespec *interval)</code><br>
+                Wywołanie systemowe zwraca przyznany kwant czasu dla danego procesu (wartość zwracaną przez <code>NICE_TO_TICKS</code>) (innego niż SCHED_FIFO - ten teoretycznie pracuje bez ograniczeń).</br>
+        </ul>
+        <br><br>
+        
+<!-- synchronizacja procesów na poziomie jądra (HŚ) -->
+        <hr noshade>
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#synchro" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Huber Śledź
+                </td>
+            </tr>
+        </table>
+        <a name="synchro"><h2>Synchronizacja procesów na poziomie jądra</h2>
+        <p>Jak wiadomo, funkcje jądra są wykonywane w następstwie żądań, które mogą być zgłaszane na dwa sposoby:</p>
+        <ul>
+            <li>proces wykonujący się w trybie użytkownika zgłasza jakiś wyjątek
+            <li>urządzenie zewnętrzne wysyła sygnał do programowalnego kontrolera przerwań PIC (ang. Programmable Interrupt Controller) za pomocą linii IRQ, a odpowiednie przerwania są włączone.
+        </ul>
+        <p>Sekwencja instrukcji, wykonywana w trybie jądra w celu obsłużenia żądania, jest nazywana <b>ścieżką wykonania jądra</b>.<br> 
+        Ścieżki wykonania jądra pełnią rolę podobną do procesów, są jednak prostsze. Przede wszystkim nie jest z nimi związany żaden deskryptor, poza tym nie są szeregowane za pomocą jednej  funkcji, ale przez wstawienie do kodu jądra sekwencji instrukcji zatrzymujących lub wznawiających ścieżki.<br><br>
+        W najlepszym przypadku procesor wykonuje ścieżki wykonania jądra sekwencyjnie, od pierwszej do ostatniej instrukcji. Niestety, jeżeli się zdarzy:</p>
+        <ul>
+            <li>przełączenie kontekstu;
+            <li>wystąpienie przerwania, akurat wtedy gdy procesor wykonywał jakąś ścieżkę wykonania jądra z włączonymi przerwaniami (w tym przypadku jądro pozostawia  niedokończoną ścieżkę wykonania jądra i rozpoczyna następną, obsługującą przerwanie);
+        </ul>
+        <p>to procesor musi przeplatać ścieżki  wykonania jądra. I tutaj trzeba uważać na struktury danych zawierające  kilka powiązanych zmiennych. Wszystkie instrukcje operujące na takiej strukturze trzeba umieścić w jednej sekcji krytycznej. </p><br>
+        <p>W Linuksie są wyróżnione cztery techniki synchronizacji: 
+        <ul>
+            <li>niewywłaszczanie procesów w trybie jądra
+            <li>operacje niepodzielne
+            <li>wyłączanie przerwań
+            <li>blokady
+        </ul>
+        <br><br><br><br><br><br><br><br>
+                
+<!-- blokady (HŚ) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#blokady" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Huber Śledź
+                </td>
+            </tr>
+        </table>
+        <a name="blokady"><h4>Blokady</h4>
+        <p>W systemach jednoprocesorowych Linux oferuje jeden rodzaj blokad, tzw. <b>semafory jądra</b>.<br>
+        W przypadku gdy ścieżka wykonania jądra chce pobrać zajęty, chroniony przez semafor jądra, zasób, to odpowiedni proces zostanie uśpiony. Zacznie swoje działanie wtedy, gdy zasób stanie się dostępny.<br><br>
+        Semafory jądra są obiektami typu <code>struct semaphore</code> [<a class="path">Linux/include/asm-i386/semaphore.h</a>] i mają następujące pola:</p>
+        <ul>
+            <li><code>atomic_t count</code> - przechowuje  wartość  całkowitą. Jeżeli jest większa niż 0, oznacza to, że zasób jest dostępny. Jeżeli wartość count jest mniejsza lub równa 0, to zasób jest zajęty. Zmienna typu <code>atomic_t</code> jest strukturą zawierającą jeden atrybut typu <code>int</code>, na której w sposób atomowy są zdefiniowane pewne operacje arytmetyczne.<br><br>
+            <li><code>wait_queue_head_t wait</code> - przechowuje adres kolejki oczekiwania, która zawiera wszystkie uśpione procesy, czekające aktualnie na zasób<br><br>
+            <li><code>int sleepers</code> -  zmienna pomocnicza, która mówi ile procesów w danej chwili przejdzie pod semaforem. Jest ona inicjalizowana na  0.<br><br>
+        </ul>
+        <p>Pole count jest zwiększane, gdy proces chce podnieść semafor, a zmniejszane gdy go opuszcza.<br><br>
+        Jeżeli proces chce podnieść semafor, wywołuje funkcję <code>up()</code>.</p>
+        <br><br>
+
+<!-- algorytm up (HŚ) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#up" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Huber Śledź
+                </td>
+            </tr>
+        </table>
+        <a name="up"><h4>Algorytm up</h4>
+        <p>Najpierw proces zwiększa wartość <code>count</code> i porównuje ją z zerem (porównanie i test są wykonywane atomowo). Jeżeli nowa wartość <code>count</code> jest większa od zera, to w kolejce oczekiwania semafora nie ma żadnego procesu, tak więc proces nic więcej nie robi. W przeciwnym wypadku, <code>(count &lt;=0)</code> budzi pierwszy proces z kolejki procesów czekających na zasób (funkcja <code>wake_up()</code>).  Wykonanie funkcji <code>wake_up()</code> jest chronione, tzn. przed  wykorzystywaniem elementów kolejki zapamiętywane są flagi oraz wyłączane przerwania, a  po zakończeniu działań na kolejce przerwania zostają włączane, a flagi odtwarzane.</p>
+<pre> 
+void up(semaphore *sem)
+{
+    /* Sekcja krytyczna */
+    sem-&gt;count ++;
+   
+    if (sem-&gt;count &lt;= 0) /* wpp. kolejka oczekiwania jest pusta */
+    {
+        /* Koniec sekcji */
+
+        Wstaw następny proces z  kolejki oczekiwania semafora do kolejki procesów  gotowych. 
+        /* Budzenie procesu - funkcja  wake_up */
+
+    }
+}
+</pre>
+        <p>Jeżeli proces chce opuścić semafor, wywołuje funkcję <code>down()</code>. </p>
+        <br><br>
+        
+<!-- algorytm down (HŚ) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#down" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Huber Śledź
+                </td>
+            </tr>
+        </table>
+        <a name="down"><h4>Algorytm down</h4>
+        <p>Analogicznie jak w funkcji <code>up()</code>, na początku proces zmniejsza wartość <code>count</code> i porównuje ją z zerem (operacja atomowa). Jeżeli nowa wartość <code>count</code> jest większa bądź równa zero, to procesowi udało się przejść pod semaforem i zająć zasób, w przeciwnym wypadku proces zmienia swój stan na TASK_UNINTERRUPTIBLE oraz wstawia  się do kolejki <code>wait</code> - procesów czekających na zasób (funkcja <code>add_wait_exclusive()</code> - analogiczna ochrona jak w <code>wake_up()</code>, przy wykonywaniu tej funkcji). Następnie proces wyłącza przerwania (makro <code>spin_lock_irq()</code>)  i zwiększa wartość <code>sleepers</code>. Zaczyna wykonywać pętlę. Atomowo zwiększa <code>count</code> o <code>(sleepers - 1)</code> (makro <code>atomic_add_negative()</code>) i sprawdza czy wartość <code>count</code> jest większa bądź równa zero. Jeśli tak, to może pobrać zasób. Ustawia <code>sleepers</code> na 0 (żeby zablokować inne procesy), wychodzi z pętli, odblokowuje przerwania (makro <code>spin_unlock_irq()</code>), usuwa się z kolejki <code>wait</code> (funkcja <code>remove_wait_queue()</code>), zmienia stan na TASK_RUNNING i budzi pierwszy proces z kolejki <code>wait</code> funkcją <code>wake_up()</code>. Jeśli <code>count &lt; 0</code>, to musi zasnąć. Ustawia <code>sleepers</code> na 1, odblokowuje przerwania i wywołuje funkcje <code>schedule()</code>, która go usypia (wywłaszcza).  Po obudzeniu powtarza pętlę aż do skutku.</p>
+<pre>
+void down(struct semaphore *sem)
+{
+    /*  Sekcja  krytyczna */
+    sem-&gt;count--;
+    if  (sem-&gt;count &lt; 0)  /* wpp. udało się przejść pod  semaforem */
+    {
+        /* Koniec sekcji */
+
+        Zmień stan procesu na TASK_UNINTERRUPTIBLE;
+
+        Wstaw proces do  kolejki oczekiwania semafora. /* add_wait_queue_exclusive() */
+
+        Wyłączenie  przerwań /* spin_lock_irq() */
+        sem-&gt;sleepers++;
+  
+        for (;;){
+         
+            int sleepers = sem-&gt;sleepers;
+            if ((sem-&gt;count += sleepers - 1) &gt;= 0)/*!atomic_add_negative(sleepers-1, sem-&gt;count)*/
+            {							  /* ktoś podniósł semafor */
+                sem-&gt;sleepers = 0;
+                break;  /* możemy pobrać zasób*/
+            }
+
+            sem-&gt;sleepers = 1;
+            Włączenie przerwań /* spin_unlock_irq() */
+
+            schedule(); /* proces zostaje uśpiony */
+
+            Zmień stan procesu na TASK_UNINTERRUPTIBLE
+
+            Wyłączenie  przerwań
+
+        } /* for */
+   
+        Włączenie przerwań
+  
+        Usuń proces z  kolejki oczekiwania semafora /* remove_wait_queue() */
+
+        Zmień stan procesu na TASK_RUNNING
+
+        Wstaw pierwszy (jeśli jest) proces z  kolejki oczekiwania semafora
+        do kolejki procesów gotowych. /* wake_up() - budzenie procesu */
+    }
+}
+</pre>
+        <br><br>
+        
+<!-- przełączanie kontekstu (HŚ) -->
+        <hr noshade>
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#switch" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Huber Śledź
+                </td>
+            </tr>
+        </table>
+        <a name="switch"><h2>Przełączanie kontekstu</h2>
+        <p>W skład kontekstu procesu wchodzą: zawartość rejestrów procesora i przestrzeni adresowej procesu oraz struktury jądra związane z danym procesem. Przełączanie  kontekstu polega na zamianie aktualnie wykonującego się procesu.<br><br>
+        Sytuacje w jakich dochodzi do przełączania kontekstu to:</p>
+        <ul>
+            <li>pojawienie się procesu o priorytecie wyższym niż priorytet bieżącego procesu
+            <li>zaśnięcie procesu w oczekiwaniu na jakieś zdarzenie 
+            <li>wykorzystanie przez bieżący proces przydzielonego mu kwantu czasu procesora
+            <li>dobrowolna rezygnacja z procesora (wywołanie funkcji <code>sched_yield()</code>)
+            <li>zakończenie działania procesu
+        </ul>
+        <p>Z każdym procesorem w systemie  jest związana specjalna struktura TSS, określana mianem segmentu stanu zadania. W tej strukturze system przechowuje kontekst aktualnie działającego procesu.<br><br>
+        W TSS przechowywane są następujące dane obecnie działającego procesu:</p>
+        <ul>
+            <li>adresy stosów  dla poziomów pracy procesora (pola esp0, ss0 , esp1, ss1, esp2, ss2)
+            <li>rejestry ogólnego przeznaczenia (pola eax, ebx, ecx, edx)
+            <li>rejestry indeksowe (pola esi, edi)
+            <li>rejestry segmentowe(ds,es,fs,gs)
+            <li>aktualny stos(ss,esp,ebp)
+            <li>adres kolejnej instrukcji (cs, eip)
+            <li>flagi(eflags)
+            <li>mapa bitowa dostępnych portów we/wy
+        </ul>
+        <p>W deskryptorze procesu jest pole <code>thread</code> typu <code>thread_struct</code>, w którym znajdują się informacje o stanie tego procesu  m.in. thread.esp0, esp, eip, fs, gs  o znaczeniu analogicznym jak odpowiednie pola w TSS.</p>
+
+<!-- makro switch_to (HŚ) -->
+        <hr noshade size="1">
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#switch_to" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Huber Śledź
+                </td>
+            </tr>
+        </table>
+        <a name="switch_to"><h4>Makro switch_to</h4>
+        <p>Makro <code>switch_to()</code> [<a class="path">Linux/include/asm-i386/system.h</a>] wykonuje przełączenie procesów. Używa trzech parametrów oznaczonych jako <code>prev</code>, <code>next</code> i <code>last</code>. <code>prev</code> jest wskaźnikiem do deskryptora procesu, który ma być przełączony do tła, a <code>next</code> jest wskaźnikiem do deskryptora procesu, który ma być wykonywany przez procesor. Makro to jest wywoływane przez funkcję <code>schedule()</code>.<br><br>
+        Jak działa to makro?</p>
+        <ul>
+            <li>zapisuje na stosie bieżącego procesu rejestry ESI, EDI, EBP
+            <li>przełącza stosy. W polu <code>prev-&gt;thread.esp</code> zapisywana jest bieżąca wartość rejestru ESP, natomiast  z <code>next-&gt;thread.esp</code> jest odtwarzana  wartość tego rejestru,  wskazująca na szczyt stosu procesu <code>next</code> w segmencie danych jądra. W tym momencie jądro działa na stosie jądra <code>next</code>, tak więc tutaj następuje przełączenie kontekstu
+            <li>w <code>prev-&gt;thread.eip</code> jest zapisywany adres procedury, która powoduje odtworzenie ze stosu umieszczonych tam wartości rejestrów  ESI, EDI oraz EBP.
+            <li>następnie jest przywracana wartość EIP z <code>next-&gt;thread.eip</code>. Jeżeli proces <code>next</code> nie był jeszcze usypiany to w tym polu będzie adres etykiety <code>ret_from_fork</code>, której adres jest zapisywany w <code>thread.eip</code> procesu zaraz po jego utworzeniu przez funkcje systemową <code>fork()</code>.
+            <li>wywołanie funkcji <code>__switch_to(prev, next)</code> [<a class="path">Linux/i386/kernel/process.c</a>], która kończy przełączanie kontekstu.
+        </ul>
+        <p>Jak działa <code>__switch_to()</code>?</p>
+        <ul>
+            <li>zapisuje stan koprocesora matematycznego.
+            <li>załadowuje rejestr esp0 z <code>next-&gt;thread.esp0</code>
+            <li>zapamiętuje rejestry FS i GS w <code>prev.thread</code>
+            <li>załadowuje nowe wartości rejestrów FS i GS z <code>next-&gt;thread</code>
+            <li>sprawdza czy proces wykonuje  się w trybie <code>debug</code> i jeżeli tak, to ładowane  są rejestry <code>debugregs</code>
+            <li>ustawiana jest odpowiednia mapa we/wy
+        </ul>
+        <p>Teraz jądro działa już w kontekście nowego procesu.
+        Po powrocie ze <code>__switch_to()</code> makro switch_to odtwarza wartości rejestrów ESI, EDI, EBP.</p>
+
+<!-- algorytm exec (HŚ) -->
+        <hr noshade>
+        <table border="0" width="100%">
+            <tr>
+                <td>
+                    <a href="#toc" class="totoc">spis treści</a> | <a href="#exec" class="totoc">=&gt;</a>
+                </td>
+                <td class="sig">
+                    Huber Śledź
+                </td>
+            </tr>
+        </table>
+        <a name="exec"><h2>Algorytm exec</h2>
+        <p>Zadaniem tego algorytmu jest zastąpienie zawartości pamięci procesu przez nowy program. Algorytm ten załadowuje plik binarny do pamięci i rozpoczyna jego wywołanie, zastępując segment kodu, danych i stosu. W szczególności  jeśli procesowi powiedzie się wywołanie funkcji exec, to nie  tworzy się nowy proces, tylko ten sam proces działa dalej jednak ma już inny kod  oraz podmieniony segment danych i stosu.  Nie zmienia mu się PID, dziedziczy wszystkie deskryptory  otwartych plików, które nie mają opcji zamykania podczas exec oraz zostaje przywrócona standardowa obsługa sygnałów, chociaż sygnały ignorowane przed wywołaniem funkcji nadal będą ignorowane.<br><br>
+        Jednakże algorytm exec wykorzystuje tylko już istniejące funkcje w systemie, służące do ładownia plików binarnych. <br><br>
+        Na początku zostaje wywołana funkcja <code>execve()</code>. [<a class="path">Linux/include/asm-i386/unistd.h</a>]<br>
+        Deklaracja:<br>
+        <code>static inline int execve(const char *file, char **argv,  char **envp);</code><br>
+        gdzie:<br>
+        <code>file</code> - nazwa programu do wykonania<br>
+        <code>argv</code> - tablica zawierająca argumenty  dla programu<br>
+        <code>envp</code> - tablica zawierająca ustawione zmienne środowiskowe<br><br>
+        Funkcja ta wywołuje przerwanie (<code>SYSCALL_VECTOR</code>) i przekazuje swoje parametry do procedury obsługi tego przerwania (<code>sys_call</code>). Z kolei ta procedura uruchamia funkcję <code>sys_execve()</code> [<a class="path">Linux/arch/i386/kernel/process.c</a>], której parametrem jest struktura zawierająca stan rejestrów procesora (<code>struct pt_regs</code> [<a class="path">Linux/include/asm-i386/ptrace.h</a>]).<br><br>
+        Funkcja <code>sys_execve()</code> sprawdza, czy podany plik jest wykonywalny i czy nie jest katalogiem lub urządzeniem - jeśli tak zwraca błąd i funkcja <code>exec()</code> na zmiennej <code>errno</code> zapisuje kod błędu.<br>
+        W przeciwnym wypadku zostaje wywołana funkcja <code>do_execve()</code> z parametrami takimi jak <code>execve()</code>, oraz dodatkowo z parametrem z <code>sys_execve()</code>.<br><br>
+        Struktura <code>struct linux_binprm</code> [<a class="path">Linux/include/linux/binfmts.h</a>] zawiera m.in. pola:</p>
+        <ul>
+            <li><code>char buf[128]</code> - tu przechowywanych jest 128 pierwszych znaków ładowanego programu
+            <li><code>int e_uid, e_gid</code> - zawierają odpowiednio, efektywny identyfikator użytkownika oraz identyfikator grupy procesu uruchamiającego.
+        </ul>
+        <p>i jest wykorzystywana przez <code>do_execve()</code>.<br><br>
+        Funkcja <code>do_execve()</code> wykonuje następujące operacje:
+        <ol>
+            <li>Statycznie alokuje strukturę danych <code>linux_binprm</code>, która zostanie wypełniona danymi, dotyczącymi nowego pliku wykonywalnego
+            <li>Wywołuje funkcję <code>open_exec()</code> w celu pobrania obiektu pozycji katalogu. W przypadku niepowodzenia zwraca odpowiedni kod błędu.
+            <li>Wywołuje funkcję <code>prepare_binprm()</code>,po to by wypełnić  strukturę <code>linux_binprm</code>. Funkcja ta wykonuje operacje:
+                <ul>
+                    <li>Sprawdza, czy prawa pliku umożliwiają jego wykonanie, wpp. zwraca kod błędu.
+                    <li>Sprawdza, czy plik jest właśnie zapisywany, jeżeli tak zwraca kod błędu.
+                    <li>Inicjuje pola <code>e_uid</code> i <code>e_gid</code> struktury <code>linux_binprm</code>, biorąc pod uwagę wartości flag <code>setuid</code> i <code>setgid</code> pliku wykonywalnego. Pola te reprezentują odpowiednie identyfikatory efektywnego użytkownika i grupy.
+                    <li>Wypełnia pole <code>buf</code> struktury <code>linux_binprm</code> pierwszymi 128 znakami pliku wykonywalnego. Bajty te zawierają informacje umożliwiające rozpoznanie formatu pliku wykonywalnego.
+                </ul>
+            <li>Kopiuje ścieżkę dostępu argumentu linii poleceń i zmienne środowiskowe do jednego lub więcej nowo zaalokowanych bloków stronicowych. 
+            <li>Wywołuje funkcję <code>search_binary_handler()</code>, która zajmuje się właściwym uruchamianiem programu. Na początku pobiera wskaźnik do początku listy dostępnych formatów dzięki makru <code>formats</code>. Następnie dla każdego formatu próbuje zastosować jego funkcję służącą do ładowania programu (<code>load_binary()</code>), przekazując jej  strukturę danych <code>linux_binprm</code>. Przeszukiwanie listy <code>formats</code> kończy się gdy tylko jakaś funkcja <code>load_binary()</code> potwierdzi format wykonywalny pliku.
+            <li>Jeżeli format pliku wykonywalnego nie znajduje się na liście <code>formats</code>, zwalnia wszystkie zaalokowane bloki stronicowe i zwraca kod błędu. Linux nie może rozpoznać formatu pliku wykonywalnego.
+            <li>W przeciwnym wypadku ustawia flagę w strukturze procesu mówiącą o tym, że udało się wykonać <code>exec()</code> i zwraca kod zwrócony przez funkcję <code>load_binary()</code>, związaną z formatem pliku wykonywalnego.
+        </ul><br><br>
+        <p>Niektóre błędy jakie może zgłosić funkcja <code>exec()</code>:</p>
+        <table border="0" cellpadding="1" cellspacing="0">
+            <tr><td width="40">&nbsp;</td><td><code>EACCES</code></td><td width="20">&nbsp;</td><td>- zabroniony dostęp do pliku</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>ENOMEM</code></td><td width="20">&nbsp;</td><td>- nowy proces wymaga zbyt dużo pamięci</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>EAGAIN</code></td><td width="20">&nbsp;</td><td>- ilość pamięci podczas operacji we/wy jest niewystarczająca</td></tr>
+            <tr><td width="40">&nbsp;</td><td><code>ENOENT</code></td><td width="20">&nbsp;</td><td>- błędna ścieżka dostępu do pliku</td></tr>
+        </table><br>
+        <br><br>
+        
+    </body>
+</html>
+

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+chown root vscan
+chmod u+s,g+x,o+x vscan

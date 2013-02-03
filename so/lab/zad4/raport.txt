@@ -1,0 +1,68 @@
+SO LAB, zadanie 4
+autor rozwi±zania: Maciek Makowski (mm189188)
+10.02.2002
+
+				
+				RAPORT
+
+
+1. Wstêp
+
+Nieniejszy raport ma na celu podsumowanie wyników testów
+wydajno¶ciowych mechanizmu dziennika zmian plików.
+
+
+2. Metoda testowania
+
+Przeprowadzone zosta³y testy porównawcze - ten sam zestaw testów
+uruchomiono na oryginalnym j±drze 2.4.7 oraz na j±drze zmodyfikowanym
+o dziennik zmian (przy dzia³aj±cym dzienniku). Testy polega³y na
+dokonywaniu 5 cyklicznych zapisów 4 bajtów do 12 plików (razem 60
+zapisów). Ka¿dy test zosta³ przeprowadzony po 40 razy w trzech katalogach:
+
+a) krótka ¶cie¿ka (kilkadziesi±t znaków)
+b) d³uga ¶cie¿ka (ok 1000 znaków)
+c) ¶cie¿ka ekstremalna (ok 4000 znaków)
+
+testy przeprowadzone zosta³y na komputerze wyposa¿onym w procesor AMD
+K6/266, 64 MB RAM oraz dysk Fujitsu 3.6 GB, dzia³aj±cym pod kontrol± 
+systemu Debian GNU/Linux 2.0. Rozmiar logu zosta³ okre¶lony na 64 KB. 
+
+
+3. Wyniki testów
+
+podane czasy to odpowiednio u¶rednione: rzeczywisty czas wykonania,
+czas w trybie u¿ytkownika, czas w trybie j±dra. Czasy podane s± w tysiêcznych
+czê¶ciach sekundy, procentowa ró¿nica mówi, o ile procent czas
+wykonania w wersji z dziennikiem by³ d³u¿szy od czasu bez dziennika.
+
+        bez dziennika        z dziennikiem         ró¿nica (%)
+
+a)      37, 20, 18           42, 20, 18            13.5
+b)      37, 20, 18           45, 22, 18            21.6
+c)      40, 20, 18           58, 30, 30            45
+
+
+4. Komentarz do wyników
+
+Wprowadzenie dziennika zmian pogorszy³o co prawda wydajno¶æ systemu (i
+to znacznie, w przypadku ekstremalnie d³ugich ¶cie¿ek), lecz pamiêtaæ
+nale¿y, ¿e powy¿sze ró¿nice dotycz± tylko zapisu do pliku i s±
+tak wyra¼ne, poniewa¿ ilo¶æ zapisywanych danych i ilo¶æ samych zapisów
+by³a niewielka. Przy wszelkich innych operacjach na plikach testy nie
+wykaza³y ró¿nic w wydajno¶ci.
+
+
+5. Podsumowanie
+
+Spadek wydajno¶ci zapisu o 13.5% w standardowym przypadku jest 
+akceptowalny, o ile dostarczona w zamian funkcjonalno¶æ znajdzie
+zastosowanie. W tym wypadku przydatno¶æ mechanizmu dziennika jest do¶æ
+ograniczona - dziennik znajduje zastosowanie jedynie wtedy, gdy
+stosunkowo czêsto korzystamy z programów zbieraj±cych dane o
+wszystkich plikach na dysku. Ze wzglêdu na przeznaczenie dziennika,
+musi on dzia³aæ bez przerwy, st±d w przeciêtnym przypadku stosowanie
+tego mechanizmu nie wydaje siê byæ uzasadnione.
+
+
+

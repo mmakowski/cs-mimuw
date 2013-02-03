@@ -1,0 +1,150 @@
+\documentclass[a4page]{article}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{times}
+\RequirePackage[latin2]{inputenc}
+\RequirePackage[polish]{babel}
+\RequirePackage{a4wide}
+\RequirePackage{longtable}
+\RequirePackage{multicol}
+\RequirePackage{url}
+
+\author{Maciej Makowski}
+\title{Zarz±dzanie procesami w Linux 2.4.7 - zadania}
+
+\textwidth 15cm         
+\oddsidemargin 1cm
+\evensidemargin 1cm
+
+\begin{document}
+\maketitle
+
+\section{Zadania}
+\emph{Zadania oznaczone (*) zosta³y wykorzystane na æwiczeniach w dniu 23.11.2001}
+
+\begin{enumerate}
+
+	\item \emph{(*)} Czy istnieje górne ograniczenie na priorytet zwyk³ego procesu (czyli warto¶æ pola \texttt{counter} w \texttt{task\_struct})? Je¶li tak, to ile wynosi? 
+
+	\item Funkcja \texttt{\_\_wake\_up\_common(wait\_queue\_head\_t *q, unsigned int mode, int nr\_exclusive, const int sync)} ma za zadanie:
+\begin{itemize}
+	\item dla \texttt{nr\_exclusive == 0} obudziæ wszystkie procesy ¶pi±ce w kolejce wskazywanej przez \texttt{q},
+	\item dla \texttt{nr\_exclusive > 0} obudziæ wszystkie te procesy ¶pi±ce w kolejce wskazywanej przez \texttt{q}, które nie maj± ustawionej flagi \texttt{WQ\_FLAG\_EXCLUSIVE} oraz pierwsze \texttt{nr\_exclusive} procesów z ustawion± t± flag±. 
+\end{itemize}
+Implementacja w Linuksie 2.4.7 zachowuje siê zgodnie z t± semantyk± pod warunkiem, ¿e procesy s± wstawiane do \texttt{q} w ten sposób, ¿eby wszystkie procesy z ustawion± flag± \texttt{WQ\_FLAG\_EXCLUSIVE} znalaz³y siê na koñcu kolejki (ten postulat realizuj± funkcje \texttt{add\_wait\_queue()}, \\ \texttt{add\_wait\_queue\_exclusive()} oraz \texttt{sleep\_on()}). Jak poprawiæ \texttt{\_\_wake\_up\_common()}, aby dawa³a wynik zgodny z zamierzonym nawet, je¶li procesy "`ekskluzywne"' i "`nieekskluzywne"' s± w kolejce przemieszane?
+
+\item \emph{(*)} W systemie jednoprocesorowym dzia³aj± trzy procesy obliczeniowe (nie wykonuj±ce ope\-racji wej¶cia/wyj¶cia): \(p,\,n_{1},\,n_{2}\). Procesy \(n\) wykonuj± nieskoñczon± pêtlê, podczas gdy \(p\) wykonuje obliczenie wymagaj±ce \(10 * q\) czasu procesora (\(q\) jest domy¶ln± d³ugo¶ci± kwantu przyznawanego zwyk³ym procesom). Jak zmieni³by siê ³±czny czas wykonania zadania liczonego przez \(p\), gdyby podzieliæ je miêdzy trzy procesy \(p_{1},\,p_{2},\,p_{3}\)? Dla ustalenia uwagi za³ó¿my, ¿e w pocz±tkowym stanie systemu procesy \(p\) znajduj± siê na pocz±tku kolejki procesów gotowych, za¶ warto¶ci \texttt{counter} i \texttt{NICE\_TO\_TICKS(nice)} wszystkich procesów wynosz± \(q\).
+
+\item \emph{(*)} W systemie jednoprocesorowym dzia³a \(k\) procesów czasu rzeczywistego \(p_{1}...p_{k}\) (o takich samych warto¶ciach \texttt{rt\_priority}) szeregowanych metod± \texttt{SCHED\_FIFO}, oraz pewna liczba zwyk³ych procesów. Ka¿dy z procesów czasu rzeczywistego cyklicznie:
+\begin{itemize}
+	\item wykonuje siê na procesorze przez czas \(t_{cpu}\)
+	\item oczekuje na wej¶cie/wyj¶cie przez czas \(t_{io}\)
+\end{itemize}
+\begin{enumerate}
+	\item jaka relacja powinna zachodziæ miêdzy \(k\), \(t_{cpu}\) i \(t_{io}\), aby zwyk³e procesy mog³y w ogóle korzystaæ z procesora?
+	\item w jaki sposób zmieni³aby siê sytuacja zwyk³ych procesów (mia³yby dla siebie wiêcej czy mniej czasu procesora), gdyby procesy czasu rzeczywistego szeregowaæ metod± \texttt{SCHED\_RR}?
+\end{enumerate}
+\end{enumerate}
+
+\newpage
+\section{Rozwi±zania}
+
+\begin{enumerate}
+
+	\item Warto¶æ zmiennej \texttt{counter} wzrasta jedynie podczas przeliczania na nowo priorytetów procesów. Wówczas jest ona aktualizowana zgodnie ze wzorem \[ counter := \frac{counter}{2} + priority \] gdzie \(priority\) jest odpowiednio przeskalowan± warto¶ci± zmiennej \texttt{nice}. Przy za³o¿eniu, ¿e proces w ogóle nie zu¿ywa przyznanego mu czasu, warto¶æ zmiennej \texttt{counter} bêdzie przy kolejnych przeliczaniach warto¶ci± kolejnych wyrazów szeregu geometrycznego: \[ priority,\,priority + \frac{priority}{2},\,priority + \frac{priority}{2} + \frac{priority}{4}... \] za¶ \[ \sum _{i = 0}^{\infty}\frac{priority}{2^{i}} = 2 * priority \] (ze wzoru na sumê szeregu geometrycznego), st±d górne ograniczenie na warto¶æ zmiennej \texttt{counter} wynosi \(2 * priority \).
+
+	\item \emph{Rozwi±zanie zosta³o zakodowane w C, ze wzglêdu na zwart± formê, jak± oferuj± konstrukcje tego jêzyka. Mo¿liwe jest oczywi¶cie przedstawienie go w postaci pseudokodu - podobnie jak w trakcie prezentacji przedstawiony zosta³ oryginalny algorytm.}\newline Je¶li nie za³o¿ymy odpowiedniego rozmieszczenia procesów, to w celu uzyskania zamie\-rzonego efektu trzeba bêdzie przegl±daæ kolejkê do samego koñca. Mo¿liwa jest np. taka poprawka: wprowadzamy now± zmienn± \texttt{int fin = 0;}, a nastêpnie w miejscu naj\-g³êbszego zagnie¿d¿enia zamiast
+\begin{verbatim}
+if (try_to_wake_up(p, sync) && (curr->flags&WQ_FLAG_EXCLUSIVE)
+       && !--nr_exclusive)
+    break;       
+\end{verbatim}
+wstawiamy
+\begin{verbatim}
+if (!fin && try_to_wake_up(p, sync) &&
+       (curr->flags&WQ_FLAG_EXCLUSIVE) && !--nr_exclusive)
+    fin = 1;
+if (fin && !(curr->flags&WQ_FLAG_EXCLUSIVE))
+    try_to_wake_up(p, sync);
+\end{verbatim}
+Przy poprawianiu nale¿y zwróciæ uwagê, aby nie zmniejszyæ \texttt{nr\_exclusive} zanim nie bêdziemy mieli pewno¶ci, ¿e \texttt{try\_to\_wake\_up()} dla "`ekskluzywnego"' procesu siê powiod³o.
+
+	\item Wykres przydzia³u procesora dla pierwszego przypadku (obliczenie wykonywane przez jeden proces):
+\begin{picture}(400, 100)(-40, 0)
+	\put(30, 28){\vector(0, 1){60}}
+	\put(30, 30){\vector(1, 0){300}}
+	\multiput(28, 45)(0, 15){3}{\line(1, 0){3}}
+	\multiput(40, 28)(10, 0){28}{\line(0, 1){3}}
+	\put(10, 45){\(p\)}
+	\put(10, 60){\(n_{1}\)}
+	\put(10, 75){\(n_{2}\)}
+	\put(30, 15){\scriptsize0}
+	\put(130, 15){\scriptsize10}
+	\put(230, 15){\scriptsize20}
+	\put(310, 15){\scriptsize28}
+	\linethickness{1.5pt}
+	\multiput(30, 45)(30, 0){10}{\line(1, 0){10}}
+	\linethickness{0.5pt}
+	\multiput(40, 60)(30, 0){9}{\line(1, 0){10}}
+	\multiput(50, 75)(30, 0){9}{\line(1, 0){10}}
+\end{picture}
+jak widaæ, wykonywanie procesu \(p\) zakoñczy siê po czasie 28\(q\).\newline Dla drugiego przypadku (obliczenie wykonywane przez trzy procesy), wykres przydzia³u procesora wygl±da nastêpuj±co:
+\begin{picture}(400, 100)(-40, 0)
+	\put(30, 28){\vector(0, 1){60}}
+	\put(30, 30){\vector(1, 0){300}}
+	\multiput(28, 40)(0, 10){5}{\line(1, 0){3}}
+	\multiput(45, 28)(15, 0){16}{\line(0, 1){3}}
+	\put(10, 40){\(p_{1}\)}
+	\put(10, 50){\(p_{2}\)}
+	\put(10, 60){\(p_{3}\)}
+	\put(10, 70){\(n_{1}\)}
+	\put(10, 80){\(n_{2}\)}
+	\put(30, 15){\scriptsize0}
+	\put(180, 15){\scriptsize10}
+	\put(270, 15){\scriptsize16}
+	\linethickness{1.5pt}
+	\multiput(30, 40)(75, 0){4}{\line(1, 0){15}}
+	\multiput(45, 50)(75, 0){3}{\line(1, 0){15}}
+	\multiput(60, 60)(75, 0){3}{\line(1, 0){15}}
+	\linethickness{0.5pt}
+	\multiput(75, 70)(75, 0){3}{\line(1, 0){15}}
+	\multiput(90, 80)(75, 0){3}{\line(1, 0){15}}	
+\end{picture}
+tutaj obliczenie zakoñczy siê po czasie 16\(q\).\newline \textbf{Wniosek:} nawet w systemie jednoprocesorowym podzia³ obliczenia miêdzy kilka procesów mo¿e skróciæ czas wykonania - kosztem innych procesów dzia³aj±cych w systemie.
+
+	\item
+\begin{enumerate}
+	\item Schemat dzia³ania procesów czasu rzeczywistego:
+\begin{picture}(400, 130)(-40, 0)
+	\put(20, 30){\linethickness{1.5pt}\line(1, 0){20}\linethickness{0.5pt}\line(1, 0){100}\linethickness{1.5pt}\line(1, 0){20}\linethickness{0.5pt}\line(1, 0){100}}
+	\put(20, 28){\line(0, 1){5}}
+	\put(40, 28){\line(0, 1){5}}
+	\put(140, 28){\line(0, 1){5}}
+	\put(160, 28){\line(0, 1){5}}
+	\put(260, 28){\line(0, 1){5}}
+	\put(5, 30){\(p_{1}\)}
+	\put(23, 15){\(t_{cpu}\)}
+	\put(85, 15){\(t_{io}\)}
+	\put(40, 50){\linethickness{1.5pt}\line(1, 0){20}\linethickness{0.5pt}\line(1, 0){100}}
+	\put(40, 48){\line(0, 1){5}}
+	\put(60, 48){\line(0, 1){5}}
+	\put(160, 48){\line(0, 1){5}}
+	\put(165, 50){...}
+	\put(25, 50){\(p_{2}\)}
+	\multiput(100, 60)(0, 5){6}{.}
+	\put(100, 100){\linethickness{1.5pt}\line(1, 0){20}\linethickness{0.5pt}\line(1, 0){100}}
+	\put(100, 98){\line(0, 1){5}}
+	\put(120, 98){\line(0, 1){5}}
+	\put(220, 98){\line(0, 1){5}}
+	\put(225, 100){...}
+	\put(85, 100){\(p_{k}\)}
+	\multiput(120, 30)(0, 6){12}{\line(0, 1){3}}
+	\multiput(140, 30)(0, 6){12}{\line(0, 1){3}}
+	\put(123, 70){\(\Delta t\)}
+\end{picture}
+\(\Delta t\) oznacza czas jaki up³ywa od momentu u¶pienia \(p_{k}\) do obudzenia \(p_{1}\). Ten w³a¶nie odcinek czasu maj± do dyspozycji zwyk³e procesy, konieczne jest zatem, aby \(\Delta t > 0\). Poniewa¿ \(\Delta t = t_{io} - (k - 1) * t_{cpu}\), st±d szukana zale¿no¶æ jest postaci \[t_{io} - (k - 1) * t_{cpu} > 0\]
+	\item wystarczy zauwa¿yæ, ¿e strategia \texttt{SCHED\_FIFO} jest z punktu widzenia zwyk³ych procesów najgorsz± mo¿liw±, poniewa¿ odcinek czasu, w którym wszystkie procesy czasu rzeczywistego oczekuj± na wej¶cie/wyj¶cie jest najkrótszy. Nale¿y pokazaæ, ¿e przez czas \(t_{io}\) u¶pienia jednego z procesów \(p\), pozosta³e procesy czasu rzeczywistego nie zu¿yj± wiêcej ni¿ \((k - 1) * t_{cpu}\) czasu procesora. Przyjmijmy przeciwnie: w tej sytuacji który¶ z \(k - 1\) procesów musia³ w odcinku czasu d³ugo¶ci \(t_{io}\) wykonywaæ siê przez czas d³u¿szy ni¿ \(t_{cpu}\), co jest sprzeczne z definicj± procesu czasu rzeczywistego zawart± w tre¶ci zadania. Poniewa¿ przy szeregowaniu \texttt{SCHED\_FIFO} pozosta³e \(k - 1\) procesów zu¿ywa dok³adnie \((k - 1) * t_{cpu}\) czasu procesora, st±d ta strategia szeregowania jest, z punktu widzenia zwyk³ych procesów, najgorsza.\newline Pozostaje pokazaæ, ¿e \texttt{SCHED\_RR} mo¿e osi±gn±æ lepszy wynik; w tym celu wystarczy rozpatrzyæ przyk³ad, w którym d³ugo¶æ kwantu dla \texttt{SCHED\_RR} wynosi \(t_{cpu}/2\). W takim przypadku czas \(\Delta t\), w którym wszystkie procesy czasu rzeczywistego czekaj±, wyniesie \(t_{io} - (k - 1) * t_{cpu}/2\), co jest ostro wiêksze od \(t_{io} - (k - 1) * t_{cpu}\).\newline Ogólnie, efektywno¶æ (z punktu widzenia zwyk³ych procesów) szeregowania \texttt{SCHED\_RR} zale¿y od d³ugo¶ci kwantu przydzielanego procesom czasu rzeczywistego, jednak nigdy nie jest gorsza ni¿ w przypadku \texttt{SCHED\_FIFO}.
+\end{enumerate}
+
+\end{enumerate}
+
+\end{document}

@@ -1,0 +1,51 @@
+SO Lab zad. 3
+
+autor rozwi±zania: Maciek Makowski (mm189188)
+
+Raport
+
+
+W wymaganiach odno¶nie rozwi±zañ zadañ 3 i 4 z SO Lab wspomina siê o
+obowi±zku przeprowadzenia testów i dostarczenia opracowanych w
+wyników. Z uwagi na charakter funkcjonalno¶ci implementowanej w
+zadaniu 3, przeprowadzenie jakichkolwiek sensownych testów
+wydajno¶ciowych by³o niemo¿liwe; wiêkszo¶æ grup laboratoryjnych
+zosta³a zwolniona z obowi±zku dostarczania raportu.
+
+Wykonanie testów porównawczych jest niemo¿liwe z uwagi na to, ¿e w
+systemie Linux nie ma ¿adnego mechanizmu o funkcjonalno¶ci
+porównywalnej do "kolejek komunikatów". Kolejki te nie stanowi±
+mechanizmu komunikacji miêdzy procesami, gdy¿ odbiorc± komunikatu jest
+u¿ytkownik, nie za¶ konkretny proces; to akurat ograniczenie mo¿na w
+prosty sposób przezwyciê¿yæ, stwierdzaj±c, ¿e adresatami komunikatów
+s± procesy (jako identyfikator adresata podaje siê pid, nie uid),
+jednak istnieje druga, powa¿niejsza przeszkoda w zastosowaniu
+wspomnianego mechanizmu do komunikacji miêdzy procesami: ka¿dy
+u¿ytkownik mechanizmu musi byæ rejestrowany przez administratora
+systemu. To wyklucza korzystanie z kolejek przez dynamicznie tworzone
+procesy u¿ytkowników.
+
+Z tre¶ci zadania wynika, ¿e mechanizm kolejek komunikatów zosta³
+pomy¶lany jako pewna forma komunikacji miêdzy u¿ytkownikami
+systemu. Komunikaty mia³y byæ w za³o¿eniu krótkimi wiadomo¶ciami
+tekstowymi (127 bajtów + 1 bajt zerowy). Mo¿na wiêc patrzeæ na ten
+mechanizm jako na analogiê do poczty elektronicznej.
+
+Z punktu widzenia systemu operacyjnego ró¿nica miêdzy kolejkami
+komunikatów a poczt± elektroniczn± jest taka, ¿e komunikaty z
+za³o¿enia zajmuj± pamiêæ operacyjn±, podczas gdy wiadomo¶ci poczty
+elektronicznej przechowywane s± na no¶nikach pamiêci masowej.
+
+Z funkcjonalnego punktu widzenia kolejki komunikatów prezentuj±
+mo¿liwo¶ci niezwykle ubogie - d³ugo¶æ wiadomo¶ci jest bardzo
+ograniczona, podobnie, jak maksymalna pojemno¶æ kolejki (16
+komunikatów). Dodatkowo nie ma praktycznie ¿adnej mo¿liwo¶ci
+identyfikacji nadawcy komunikatu.
+
+Podsumowanie
+
+Trudno jest znale¼æ jakiekolwiek sensowne zastosowanie dla
+zaimplementowanych kolejek komunikatów; z tego wzglêdu przeprowadzanie
+testów wydajno¶ciowych jest bezcelowe. Brak punktu odniesienia
+powoduje, ¿e si³± rzeczy wyniki musia³yby byæ podane jako warto¶ci
+bezwzglêdne.
