@@ -1,0 +1,265 @@
+<html>
+    <head>
+        <meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-2">
+        <style type="text/css">
+            h1 {
+                COLOR: #000000;
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 24pt;
+                LINE-HEIGHT: 80px;
+                TEXT-ALIGN: center
+            }
+            h2 {
+                COLOR: #000000;
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 16pt;
+                LINE-HEIGHT: 40px;
+                TEXT-INDENT: 40px
+            }
+            h3 {
+                COLOR: #000000;
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 13pt;
+                LINE-HEIGHT: 30px;
+                TEXT-INDENT: 80px
+            }
+            h4 {
+                COLOR: #000000;
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 13pt;
+                LINE-HEIGHT: 30px;
+                TEXT-ALIGN: center
+            }
+            p {
+                COLOR: #000000;
+                FONT-FAMILY: Times New Roman, Times, Serif;
+                FONT-SIZE: 12pt;
+		FONT-WEIGHT: normal;
+                TEXT-ALIGN: justify
+            }
+            li {
+                COLOR: #000000;
+                FONT-FAMILY: Times New Roman, Times, Serif;
+                FONT-SIZE: 12pt;
+		FONT-WEIGHT: normal;
+                TEXT-ALIGN: justify
+            }
+            td {
+                COLOR: #000000;
+		BACKGROUND: #ffffff;
+                FONT-FAMILY: Times New Roman, Times, Serif;
+                FONT-SIZE: 10pt;
+		FONT-WEIGHT: normal;
+		VERTICAL-ALIGN: top;
+                TEXT-ALIGN: justify
+            }
+            pre {
+	        COLOR: 444444;
+                FONT-FAMILY: Courier New, Courier;
+                FONT-SIZE: 10pt;
+            }
+            .code {
+	        COLOR: 444444;
+                FONT-FAMILY: Courier New, Courier;
+                FONT-SIZE: 10pt;
+            }
+            .path {
+                FONT-FAMILY: Lucida console, Courier New, Courier;
+                FONT-SIZE: 12pt;
+            }                
+            .auth {
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 10pt;
+                FONT-WEIGHT: bold
+            }
+            .sig {
+                COLOR: #aaaaaa;
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 8pt;
+                TEXT-ALIGN: right
+            }
+            .comment {
+                FONT-FAMILY: Times New Roman, Times, Serif;
+                FONT-SIZE: 10pt;
+            }       
+            a {
+                COLOR: #000066;    
+                FONT-FAMILY: Times New Roman, Times, Serif;
+                FONT-SIZE: 12pt;
+                TEXT-DECORATION: none
+            }     
+            a:hover {
+                COLOR: #6666ff;
+                TEXT-DECORATION: underline
+            }
+            a.totoc {
+                COLOR: #000066;    
+                FONT-FAMILY: Times New Roman, Times, Serif;
+                FONT-SIZE: 10pt;
+                TEXT-DECORATION: none
+            }     
+            a.totoc:hover {
+                COLOR: #6666ff;
+                TEXT-DECORATION: underline
+            }
+            a.dnl {
+                COLOR: #000066;    
+                FONT-FAMILY: Verdana, Arial, Helvetica, Sans-serif;
+                FONT-SIZE: 10pt;
+                TEXT-DECORATION: none
+            }     
+            a.dnl:hover {
+                COLOR: #6666ff;
+                TEXT-DECORATION: underline
+            }
+        </style>
+        <title>soopl synopsis</title>
+    </head>
+    <body bgcolor="#ffffff"> 
+
+    <h1>soopl synopsis</h1>
+    <div class="auth"><center><a href="http://mmakowski.prv.pl">Maciek Makowski</a></center></div>
+
+    <a name="language"><h2>The language</h2>
+    <p><i>soopl</i> stands for &quot;Simple Object-Oriented Programming Language&quot; and is just that: a programming language in which the fundamental notions are these of <i>object</i> and <i>class</i>. The idea is based on <i>Smalltalk</i> so soopl has some of its features, including:
+    <ul>
+        <li>extremely simple syntax which  lacks language constructs such as loop and conditional statements; repeated execution has to be handled using recursion and conditional execution is provided by classes in the <i>class library</i>, as is most of actual language functionality.
+	<li>no types assigned to variables and no static type correctness check; when one tries to send a message to an object that object can't handle, it will cause a runtime error.
+	<li><i>blocks</i> - anonymous functions, which may be passed as arguments to methods and are executed in the context from the place of declaration; in soopl blocks can't have arguments.
+    </ul>
+    <h3>Types</h3>
+    <p>soopl has four basic types:
+    <ul>
+        <li>primitive - raw integers,
+	<li>block,
+	<li>class,
+	<li>object.
+    </ul>
+    <p>Any variable can be assigned a value from one of these types.
+    <h3>Expressions</h3>
+    <p>following expressions are available ({} denote optionality):
+    <ul>
+        <li>constant: any non-negative integer constant
+	<li>identifier: any alphanumeric identifier (can't begin with a digit)
+	<li>object creation: <div class="code"><b>new</b> <i>className</i></div>
+	<li>block declaration: <div class="code"><b>[</b> {<i>statement1... statementN</i>} <b>]</b></div>
+	<li>message: <div class="code"><b>send</b> <i>target</i> <b>message</b> <i>messageName</i> {<b>with</b> <i>argument1... argumentN</i>{<b>.</b>}}</div>
+    </ul>
+    <h3>Statements</h3>
+    <p>following statements are available:
+    <ul>
+        <li>assignment: <div class="code"><b>assign</b> <i>identifier</i> <i>expression</i></div>
+	<li>evaluation: <div class="code"><b>eval</b> <i>expression</i></div>
+	<li>block execution: <div class="code"><b>exec</b> <i>block</i></div>
+	<li>return: <div class="code"><b>return</b> <i>expression</i></div>
+    </ul>
+    <h3>Declarations</h3>
+    <p>following declarations may be used in soopl programs:
+    <ul>
+        <li>class declaration: <div class="code"><b>class</b> <i>identifier</i> <b>extends</b> <i>superclassIdentifier</i> <b>objvars</b> {<i>oaId1... oaIdK</i>} <b>classvars</b> {<i>caId1... caIdL</i>} {<i>objMethodDecl1... objMethodDeclM</i>} {<i>classMethodDecl1... classMethodDeclN</i>}</div>
+	<li>object method declaration: <div class="code"><b>objmethod</b> <i>identifier</i> <b>args</b> {<i>id1... idM</i>} <b>is</b> {<i>statement1... statementN</i>}</div>
+	<li>class method declaration: <div class="code"><b>classmethod</b> <i>identifier</i> <b>args</b> {<i>id1... idM</i>} <b>is</b> {<i>statement1... statementN</i>}</div>	
+    </ul>
+    <h3>The program</h3>
+    <p>the program consists of:
+    <ul>
+        <li>class map: <div class="code">{<i>classDecl1... classDeclN</i>}</div>
+	<li>initializer: <div class="code"><b>init</b> <i>expression</i></div>
+    </ul>
+
+    <h2>The class library</h2>
+    <p>The class library is essential - the language constructs itself are too weak to allow to write even the simplest useful program. It has to contain following classes:<br><br>
+    <table border="0" cellpadding="0">
+
+    <tr><td colspan="2"><b>Boolean</b><td></tr>
+    <tr><td>extends:</td><td>Root</td></tr>  
+    <tr><td>class methods:</td><td>none</td></tr>
+    <tr><td>object methods:</td><td>
+        <table border="0" cellpadding="1" cellspacing="1" bgcolor="#888888">
+	<tr><td><b>name</b></td><td><b>arguments</b></td><td><b>returns</b></td><td><b>description</b></td></tr>
+	<tr><td>and</td><td>primitive op</td><td>primitive</td><td>performs logical and operation on itself and the argument and returns the result</td></tr>
+	<tr><td>getValue</td><td>&nbsp;</td><td>primitive</td><td>returns the value</td></tr>
+	<tr><td>ifElse</td><td>block blt, block blf</td><td>block</td><td>if is true returns blt, otherwise returns blf</td></tr>
+	<tr><td>ifElse</td><td>object ot, object of</td><td>object</td><td>if is true returns ot, otherwise returns of</td></tr>
+	<tr><td>or</td><td>primitive op</td><td>primitive</td><td>performs logical or operation on itself and the argument and returns the result</td></tr>
+	<tr><td>setValue</td><td>primitive newVal</td><td>primitive</td><td>sets the value and returns it</td></tr>
+	</table></td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
+
+    <tr><td colspan="2"><b>Integer</b><td></tr>
+    <tr><td>extends:</td><td>Root</td></tr>  
+    <tr><td>class methods:</td><td>none</td></tr>
+    <tr><td>object methods:</td><td>
+        <table border="0" cellpadding="1" cellspacing="1" bgcolor="#888888">
+	<tr><td><b>name</b></td><td><b>arguments</b></td><td><b>returns</b></td><td><b>description</b></td></tr>
+	<tr><td>add</td><td>primitive op</td><td>primitive</td><td>adds op to itself and returns the result</td></tr>
+	<tr><td>equals</td><td>primitive op</td><td>primitive</td><td>if is equal op returns true, otherwise returns false</td></tr>
+	<tr><td>getValue</td><td>&nbsp;</td><td>primitive</td><td>returns the value</td></tr>
+	<tr><td>multiply</td><td>primitive op</td><td>primitive</td><td>multiplies op by itself and returns the result</td></tr>
+	<tr><td>setValue</td><td>primitive newVal</td><td>primitive</td><td>sets the value and returns it</td></tr>
+	</table></td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
+
+    <tr><td colspan="2"><b>Root</b><td></tr>
+    <tr><td>extends:</td><td>none - this is the root of the whole inheritance tree</td></tr>  
+    <tr><td>class methods:</td><td>none</td></tr>
+    <tr><td>object methods:</td><td>none</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
+
+    <tr><td colspan="2"><b>TextIO</b><td></tr>
+    <tr><td>extends:</td><td>Root</td></tr>  
+    <tr><td>class methods:</td><td>
+        <table border="0" cellpadding="1" cellspacing="1" bgcolor="#888888">
+	<tr><td><b>name</b></td><td><b>arguments</b></td><td><b>returns</b></td><td><b>description</b></td></tr>
+	<tr><td>outputEOL</td><td>&nbsp;</td><td>self</td><td>prints the new line character on the standard output</td></tr>
+	<tr><td>outputInt</td><td>primitive val</td><td>self</td><td>prints the argument on the standard output</td></tr>
+	</table></td></tr>
+    <tr><td>object methods:</td><td>none</td></tr>
+    <tr><td colspan="2">&nbsp;</td></tr>
+
+    </table>
+
+    <h2>Examples</h2>
+    <h3>Fibonacci numbers</h3>
+    <p>The following program prints out first n Fibonacci numbers, where n is the argument passed to <i>Fibonacci</i> class with message <i>run</i> (30 in this example):
+    <hr size="1" color="#000000">
+    <pre>
+<b>class</b> Fibonacci <b>extends</b> Root
+  <b>objvars</b>
+  <b>classvars</b>
+  <b>classmethod</b> fib <b>args</b> p1 p2 cit tot 
+                       tmp1 tmp2 newV b <b>is</b>
+    <b>assign</b> tmp1 <b>new</b> Integer
+    <b>assign</b> tmp2 <b>new</b> Integer
+    <b>assign</b> newV <b>new</b> Integer
+    <b>eval</b> <b>send</b> tmp1 <b>message</b> setValue <b>with</b> p1 
+    <b>eval</b> <b>send</b> tmp2 <b>message</b> setValue <b>with</b> cit 
+    <b>eval</b> <b>send</b> newV <b>message</b> setValue 
+         <b>with</b> <b>send</b> tmp1 <b>message</b> add <b>with</b> p2 
+    <b>eval</b> <b>send</b> <b>send</b> TextIO <b>message</b> outputInt 
+              <b>with</b> <b>send</b> newV <b>message</b> getValue 
+         <b>message</b> outputEOL 
+    <b>assign</b> b <b>new</b> Boolean 
+    <b>eval</b> <b>send</b> b <b>message</b> setValue 
+         <b>with</b> <b>send</b> tmp2 <b>message</b> equals <b>with</b> tot
+    <b>exec</b> <b>send</b> b <b>message</b> ifElse <b>with</b> <b>[</b> 
+      <b>return</b> <b>self</b> 
+    <b>]</b> <b>[</b> 
+      <b>eval</b> <b>send</b> <b>self</b> <b>message</b> fib 
+           <b>with</b> p2 
+                <b>send</b> newV <b>message</b> getValue 
+                <b>send</b> tmp2 <b>message</b> add <b>with</b> 1<b>.</b> 
+                tot 
+    <b>]</b> 
+   
+  <b>classmethod</b> run <b>args</b> it <b>is</b> 
+    <b>eval</b> <b>send</b> self <b>message</b> fib <b>with</b> 0 1 1 it 
+
+	    
+<b>init</b> <b>send</b> Fibonacci <b>message</b> run <b>with</b> 30<b>.</b>
+    </pre>
+    <hr size="1" color="#000000">
+
+    <div class="sig">(c) 2002 Maciek Makowski</div>
+    </body>
+</html>

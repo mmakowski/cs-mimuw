@@ -1,0 +1,199 @@
+\documentclass[12pt,a4paper,oneside]{article}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{times}
+\RequirePackage[latin2]{inputenc}
+\RequirePackage[polish]{babel}
+\RequirePackage{a4wide}
+\RequirePackage{longtable}
+\RequirePackage{multicol}
+\RequirePackage{url}
+\usepackage{graphics}
+
+
+\begin{document}
+
+\begin{center}
+{\Huge SOOPL --- Simple, Object-Oriented Programming Language}\\\ \\\ 
+{\tt http://rainbow.mimuw.edu.pl/\~{}mm/hp/soopl}
+\end{center}
+
+\large{
+\section{Jêzyk}
+
+\subsection{Za³o¿enia}
+\begin{itemize}
+\item oparty na Smalltalku
+\item jêzyk czysto obiektowy, z minimalnym zestawem instrukcji w rodzaju pêtli, instrukcji warunkowych itp.
+\item oparty o pojêcia obiektu i komunikatu
+\item ma³a sk³adnia --- w zasadzie tylko wysy³anie komunikatów oraz niezbêdne instrukcje (zwrot warto¶ci, przypisanie)
+\item funkcjonalno¶æ zaszyta w bibliotece klas
+\item dynamiczna kontrola typów
+\item dynamiczna dyspozycja (wi±zanie metod)
+\item bloki, wykonywane w kontek¶cie z miejsca deklaracji
+\end{itemize}
+
+\subsection{Przyjête rozwi±zania i ograniczenia}
+\begin{itemize}
+\item bloki bezparametrowe
+\item typy: klasa, obiekt, blok, typ pierwotny (liczby naturalne)
+\item statyczna klasyfikacja (wi±zanie obiektu do klasy)
+\end{itemize}
+
+\subsection{Elementy sk³adni}
+\subsubsection{Wyra¿enia}
+\begin{itemize}
+\item sta³a (nieujemna liczba ca³kowita)
+\item identyfikator
+\item konstrukcja obiektu:\\ {\tt new} {\it identyfikatorKlasy}
+\item deklaracja bloku:\\ {\tt [} {\it \{instrukcja1... instrukcjaN\}} {\tt ]}
+\item komunikat:\\ {\tt send} {\it wyra¿enie} {\tt message} {\it identyfikatorKomunikatu \{} {\tt with} {\it argument1... argumentN\{}{\tt .}{\it \}\}}
+\end{itemize}
+\subsubsection{Instrukcje}
+\begin{itemize}
+\item przypisanie:\\ {\tt assign} {\it identyfikator} {\it wyra¿enie}
+\item ewaluacja:\\ {\tt eval} {\it wyra¿enie}
+\item wykonanie bloku:\\ {\tt exec} {\it wyra¿enie}
+\item zwrot warto¶ci:\\ {\tt return} {\it wyra¿enie}
+\end{itemize}
+
+\newpage
+\subsection{Biblioteka klas}
+\begin{itemize}
+\item {\bf Root} --- klasa bazowa, po niej dziedzicz± wszystkie klasy w SOOPL
+\item {\bf Boolean} --- reprezentuje warto¶ci boolowskie\\
+ciekawsze metody: {\tt and}, {\tt or}, {\tt ifElse}
+\item {\bf Integer} --- reprezentuje liczby ca³kowite\\
+ciekawsze metody: {\tt add}, {\tt equals}, {\tt multiply}
+\item {\bf TextIO} --- obs³uguje standardowe wej¶cie/wyj¶cie\\
+ciekawsze metody: {\tt outputInt}, {\tt outputEOL}
+\end{itemize}
+
+\subsection{Mo¿liwe rozszerzenia}
+\begin{itemize}
+\item rezygnacja z typu pierwotnego --- automatyczne opakowywanie ({\it boxing})
+\item rezygnacja z typu blokowego
+\item bloki z parametrami
+\end{itemize}
+
+\newpage
+\subsection{Przyk³adowy program}
+Program wypisuj±cy na ekran $n$ pierwszych liczb Fibonacciego:
+\begin{verbatim}
+class Fibonacci extends Root
+  objvars
+  classvars
+  classmethod fib args p1 p2 cit tot 
+                       wrP1 wrCit newV b is
+    assign wrP1 new Integer
+    assign wrCit new Integer
+    assign newV new Integer
+    eval send wrP1 message setValue with p1 
+    eval send wrCit message setValue with cit 
+    eval send newV message setValue 
+         with send wrP1 message add with p2 
+    eval send send TextIO message outputInt 
+              with send newV message getValue 
+         message outputEOL 
+    assign b new Boolean 
+    eval send b message setValue 
+         with send wrCit message equals with tot
+    exec send b message ifElse with [ 
+      return self 
+    ] [ 
+      eval send self message fib 
+           with p2 
+                send newV message getValue 
+                send wrCit message add with 1. 
+                tot 
+    ] 
+   
+  classmethod run args it is 
+    eval send self message fib with 0 1 1 it 
+	    
+init send Fibonacci message run with 30.
+\end{verbatim}
+
+
+
+
+\section{Program}
+
+\subsection{Specyfikacja}
+Podstawa dla interpretera: semantyka denotacyjna jêzyka (oparta o kontynuacje).\\
+{\bf wej¶cie:} stan, ¶rodowisko, tekst programu;\\
+{\bf wyj¶cie:} stan i ¶rodowisko, zmodyfikowane zgodnie z semantyk± SOOPL.
+
+\subsection{Etapy projektowania}
+\subsubsection{Warstwa procesów}
+\\\ \\\ \\\ \\\ \\\ \\\ \\\ \\\ \\\ \\\ \\\ 
+%obrazek
+\subsubsection{Warstwa danych}
+\\\ \\\ \\\ \\\ \\\ \\\ \\\ \\\ 
+
+\subsection{Hierarchia modu³ów}
+
+
+\newpage
+\subsection{Przyk³ady kodu}
+\subsubsection{Aksjomat}
+\begin{verbatim}
+val subst: (''a -> 'b) -> 'b -> ''a -> (''a -> 'b)
+axiom forall f =>
+          forall v => 
+              forall a =>
+                  (subst f v a a = v) andalso
+                  (forall b => (b <> a) implies 
+                    (subst f v a b = f b))
+\end{verbatim}
+\subsubsection{Biblioteka klas}
+\begin{verbatim}
+val andMethod = 
+  mkDVMethod(
+    mkMethod(
+      fn t: Loc =>
+        fn mkEnv(lr): Env =>
+          fn mkCExp(ce): CExp =>
+            mkCSt(
+              fn mkS(s, ml): S =>
+                let val mkDVLoc(l1) = lr (mkIde "val")
+                    val mkDVLoc(l2) = lr (mkIde "op")
+                    val mkSVPrimitive(mkPrimitive(i1))=s l1
+                    val mkSVPrimitive(mkPrimitive(i2))=s l2
+                    val mkCSt(cs) = 
+                    ce (mkEVPrimitive(
+                      mkPrimitive(
+                        if i1 <> 0 andalso i2 <> 0 then 1 
+                        else 0)))
+                in cs (mkS(s, ml))
+                end)),
+    [mkIde("op")]);
+val ifElseMethod = mkDVMethod(...);
+val orMethod = mkDVMethod(...);
+val getValueMethod = mkDVMethod(...);
+val setValueMethod = mkDVMethod(...);
+val booleanClass = 
+  mkClass(mkLoc(0),
+          emptyEnv,
+          emptyEnv,
+          [mkIde("val")],
+          mkEnv(fn id: Ide => 
+                  case id of
+                      mkIde("and") => andMethod
+                    | mkIde("ifElse") => ifElseMethod
+                    | mkIde("or") => orMethod
+                    | mkIde("getValue") => getValueMethod
+                    | mkIde("setValue") => setValueMethod
+                    | _ => unboundIde id));
+\end{verbatim}
+
+\subsection{Mo¿liwe rozszerzenia i usprawnienia}
+\begin{itemize}
+\item lepsze zarz±dzanie pamiêci± (Modu³y {\it Memory} i {\it Environment}) --- efektywna struktura danych, automatyczne od¶miecanie itp.
+\end{itemize}
+
+
+}
+
+\end{document}
+
+ 

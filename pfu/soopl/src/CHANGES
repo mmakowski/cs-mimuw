@@ -1,0 +1,12 @@
+0.1.2
+
+- separated module Dumper which is now responsible for printing out
+  environment and state
+- cleaner modularization: all required structures are explicitely
+  passed as functor arguments
+- all comments are in English
+
+
+0.1.1
+
+- initial version

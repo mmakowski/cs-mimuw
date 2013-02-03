@@ -1,0 +1,43 @@
+This directory contains the 0.1.2 release of soopl interpreter.
+
+soopl is a Simple Object-Oriented Programming language. The
+interpreter is written in SML and requires MoscowML
+(http://www.dina.kvl.dk/~sestoft/mosml.html).
+
+This is an early version of soopl, so changes in language syntax and
+semantics are to be expected; backward compatibility WILL NOT be retained.
+
+
+Installation
+------------
+
+To run soopl programs, run the mosml, load the SOOPL.sml file: 
+
+use "SOOPL.sml"; 
+
+and type:
+
+SOOPL.run <progtext>;
+
+where <progtext> is a string containing soopl program code.
+
+
+Documentation
+-------------
+For sample programs see 
+http://mmakowski.prv.pl/hp/soopl/progs.sml
+For quick reference see
+http://mmakowski.prv.pl/hp/soopl/synopsis.html
+For more info see the soopl homepage
+
+
+Homepage
+--------
+
+The soopl homepage is 
+http://mmakowski.prv.pl/hp/soopl
+
+
+
+soopl is free software. See the file LICENSE for details.
+

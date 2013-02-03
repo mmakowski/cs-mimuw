@@ -1,0 +1,625 @@
+ABSTRACT SYNTAX
+
+
+type Ide = string
+datatype Type = INTtp | BOOLtp | ARROW of Type * Type
+datatype 'a option = NONE | SOME of 'a
+datatype Decl = DECL of Ide * Type option * Expr
+     and Expr = IDE of Ide                  | FNexp of Ide * Type * Expr
+              | IFexp of Expr * Expr * Expr | APPexp of Expr * Expr
+              | LETexp of Decl* Expr        | INTcon of int
+              | BOOLcon of bool
+datatype Prog = PROG of Decl list * Expr;
+
+
+Examples
+
+val tp1 = ARROW (INTtp, INTtp);
+val tp2 = ARROW(tp1,tp1);
+val plus = IDE "plus";
+val plus_y_y = APPexp(APPexp(plus, IDE "y"), IDE "y");
+val double_fun = FNexp("y", INTtp, plus_y_y);
+val decl1 = DECL("double", SOME tp1, double_fun);
+val decl3 = DECL("quadruple", NONE, APPexp(IDE "twice", IDE "double"));
+val twice_fun = FNexp("f", tp1,
+          FNexp("x", INTtp, APPexp(IDE "f", APPexp(IDE "f", IDE "x"))));
+val decl2 = DECL("twice", SOME tp2, twice_fun);
+val expr = LETexp(DECL ("cos", NONE, APPexp(IDE "quadruple", INTcon 7)),
+                  IFexp(APPexp(APPexp(IDE "less", IDE "cos"), INTcon 30),
+                        APPexp( IDE "quadruple", INTcon 8), IDE "cos") );
+val prog = PROG([decl1,decl2,decl3],expr);
+
+
+
+STATIC SEMANTICS
+
+
+exception unbound
+type stEnv = Ide -> Type;
+val stenv_init : stEnv =
+      fn "plus" => ARROW(INTtp, ARROW(INTtp,INTtp))
+       | "minus" => ARROW(INTtp, ARROW(INTtp,INTtp))
+       | "less" => ARROW(INTtp, ARROW(INTtp,BOOLtp))
+       | "not" => ARROW(BOOLtp, BOOLtp)
+       | "and" => ARROW(BOOLtp, ARROW(BOOLtp, BOOLtp))
+       | _ => raise unbound;
+exception typeerr;
+
+fun mapsto x y = fn z => if x = z then y else raise unbound;
+fun funplus f1 f2 = fn x => ((f2 x) handle _ => f1 x);
+
+
+fun stE (IDE id) stenv =
+      ((stenv id) handle unbound => raise typeerr)
+  | stE (FNexp (id,tp,expr)) stenv =
+      let val stenv1 = funplus stenv (mapsto id tp) in
+        ARROW( tp, (stE expr stenv1))
+      end
+  | stE (IFexp (expr1,expr2,expr3)) stenv =
+      if stE expr1 stenv <> BOOLtp then raise typeerr
+      else let val tp = stE expr2 stenv in
+             if tp = stE expr3 stenv then tp else raise typeerr
+           end
+  | stE (APPexp (expr1,expr2)) stenv =
+      let val tp1 = stE expr1 stenv;
+	  val tp2 = stE expr2 stenv in
+        case tp1 of
+             ARROW(targ,tres) => if targ = tp2 then tres else raise typeerr
+           | _ => raise typeerr
+      end
+  | stE (LETexp (decl,expr)) stenv =
+      let val stenv1 = stD decl stenv in
+        stE expr (funplus stenv stenv1)
+      end
+  | stE (INTcon _) stenv = INTtp
+  | stE (BOOLcon _) stenv = BOOLtp
+and
+    stD (DECL (id, NONE, expr)) stenv =
+      let val tp1 = stE expr stenv in
+        fn ide => if (id = ide) then tp1 else raise unbound
+      end
+  | stD (DECL (id, (SOME tp), expr)) stenv =
+      let val tp1 = stE expr stenv in
+        if tp <> tp1 then raise typeerr else 
+          fn ide => if (id = ide) then tp1 else raise unbound
+      end;
+fun stDs nil stenv = (fn ide => raise unbound)
+  | stDs (decl::decls) stenv =
+      let val stenv1 = stD decl stenv in
+        funplus stenv1 (stDs decls (funplus stenv stenv1))
+      end;
+fun stP (PROG (decls, expr)) =
+    stE expr (funplus stenv_init (stDs decls stenv_init));
+
+(*
+val stE = fn : Expr -> (Ide -> Type) -> Type
+val stD = fn : Decl -> (Ide -> Type) -> Ide -> Type
+val stDs = fn : Decl list -> (Ide -> Type) -> Ide -> Type
+val stP = fn : Prog -> Type
+*)
+
+
+
+DYNAMIC SEAMANTICS
+
+
+datatype Val = INTval of int | BOOLval of bool | FUNval of Val->Val;
+type Env = Ide -> Val;
+
+exception DTR of string;
+val imp = "Impossible dynamic error:";
+fun dtr str = raise DTR (imp^str);
+fun w_a ide = DTR (imp^" wrong argument for: "^ide);
+
+val env_init : Env =
+       fn "plus" =>
+            FUNval(fn INTval n => FUNval(fn INTval m => INTval(n+m)
+                                          | _ => raise (w_a "plus") )
+                    | _ => raise (w_a "plus") )
+        | "minus" =>
+            FUNval(fn INTval n => FUNval(fn INTval m => INTval(n-m)
+                                          | _ => raise (w_a "minus") )
+                    | _ => raise (w_a "minus") )
+        | "less" =>
+            FUNval(fn INTval n => FUNval(fn INTval m => BOOLval(n<m)
+                                          | _ => raise (w_a "less") )
+                    | _ => raise (w_a "less") )
+        | "not" =>
+            FUNval(fn BOOLval p => BOOLval(not p)
+                    | _ => raise (w_a "not") )
+        | "and" =>
+            FUNval(fn BOOLval p =>
+                        FUNval(fn BOOLval q => BOOLval(p andalso q)
+                                | _ => raise (w_a "and") )
+                    | _ => raise (w_a "and") )
+        | _ => raise unbound;
+(*
+datatype  Val
+  con BOOLval : bool -> Val
+  con FUNval : (Val -> Val) -> ValERR;
+  con INTval : int -> Val
+type  Env = Ide -> Val
+exception DTR of string
+val imp = "Impossible dynamic error:" : string
+val dtr = fn : string -> 'a
+val w_a = fn : string -> exn
+val env_init = fn : Env
+*)
+
+
+fun E (IDE id) env =
+      ((env id) handle unbound => dtr ("unbound identifier "^id))
+  | E (FNexp (id,tp,expr)) env =
+      let fun f v = E expr (funplus env (mapsto id v)) in FUNval f end
+  | E (IFexp (expr1, expr2, expr3)) env =
+      let val bv = E expr1 env in
+        case bv of
+            BOOLval b => if b then E expr2 env else E expr3 env
+          | _ => dtr "not a boolean guard"
+      end
+  | E (APPexp (expr1, expr2)) env =
+      let val fv = E expr1 env in
+        case fv of
+            FUNval f => f (E expr2 env)
+          | _ => dtr "not a function value applied to an argument"
+      end
+  | E (LETexp (decl,expr)) env =
+      E expr (funplus env (D decl env))
+  | E (INTcon n) env = INTval n
+  | E (BOOLcon b) env = BOOLval b
+and
+    D (DECL (id, _, expr)) env = mapsto id (E expr env);
+
+fun Ds nil env = (fn ide => raise unbound)
+  | Ds (decl::decls) env =
+      let val env1 = D decl env in
+        funplus env1 (Ds decls (funplus env env1))
+      end;
+
+fun P (PROG (decls, expr)) =
+      let val tp = stP (PROG (decls, expr)) in
+          E expr (funplus env_init (Ds decls env_init))
+      end;
+
+(*
+val E = fn : Expr -> (Ide -> Val) -> Val
+val D = fn : Decl -> (Ide -> Val) -> Ide -> Val
+val Ds = fn : Decl list -> (Ide -> Val) -> Ide -> Val
+val P = fn : Prog -> Val
+*)
+
+
+
+EXAMPLES
+
+
+val stenv = stDs [decl1,decl2,decl3] stenv_init;
+    stenv "twice";
+(*  stenv "plus"; *)
+    stE expr (funplus stenv stenv_init);
+    stP prog;
+
+(*
+val stenv = fn : Ide -> Type
+val it = ARROW (ARROW (INTtp,INTtp),ARROW (INTtp,INTtp)) : Type
+val it = INTtp : Type
+val it = INTtp : Type
+*)
+
+
+val env = Ds [decl1,decl2,decl3] env_init;
+    env "twice";
+(*  env "plus"; *)
+    E expr (funplus env env_init);
+    P prog;
+
+(*
+val env = fn : Ide -> Val
+val it = FUNval fn : Val
+val it = INTval 32 : Val
+val it = INTval 32 : Val
+*)
+
+
+LEXICAL ANALYSIS
+
+
+datatype token = IDtkn of Ide | NUMtkn of int 
+               | VALtkn | COLtkn | EQtkn | FNtkn | DARRtkn | IFtkn | THENtkn
+               | ELSEtkn | LETtkn | INtkn | ENDtkn | LPARtkn | RPARtkn
+               | TRUEtkn | FALSEtkn | INTtkn | BOOLtkn | ARRtkn | SCOLtkn ;
+
+exception LEXICAL_ERR of (string * string);
+
+fun lerr str rst = raise LEXICAL_ERR (str, implode rst);
+
+fun recognize sym =
+  case sym of
+       "val" => VALtkn     | "in" => INtkn        | "fn" => FNtkn
+     | "end" => ENDtkn     | "if" => IFtkn        | "true" => TRUEtkn
+     | "then" => THENtkn   | "false" => FALSEtkn  | "else" => ELSEtkn
+     | "int" => INTtkn     | "let" => LETtkn      | "bool" => BOOLtkn
+     |  _ => (IDtkn sym) ;
+
+local val zero = ord "0" in fun num dig = (ord dig) - zero end;
+
+fun isletter chr = ("a" <= chr) andalso (chr <= "z") ;
+fun isdigit chr = ("0" <= chr) andalso (chr <= "9");
+fun isalphanr chr = (isletter chr) orelse (isdigit chr)
+                    orelse (chr = "'") orelse (chr = "_") ;
+fun isformatting chr = (chr = " ") orelse (chr = "\n") orelse (chr = "\t");
+
+(*
+val recognize = fn : Ide -> token
+val num = fn : string -> int
+val isletter = fn : string -> bool
+val isdigit = fn : string -> bool
+val isalphanr = fn : string -> bool
+val isformatting = fn : string -> bool
+*)
+
+
+
+fun lex nil = nil
+  | lex (fst::rst) =
+      if isletter fst then
+        let val (str, rst1) = getalphanr rst fst in
+          (recognize str)::(lex rst1)
+        end
+      else
+        if isdigit fst then
+          let val (n, rst1) = getnum rst (num fst) in
+            (NUMtkn n)::(lex rst1)
+          end
+        else
+          if isformatting fst then lex rst
+          else
+           case fst of
+                ":" => COLtkn::(lex rst)
+              | "=" => (case rst of
+                            (">"::rst) => DARRtkn::(lex rst)
+                          | _ => EQtkn::(lex rst) )
+              | "(" => LPARtkn::(lex rst)
+              | ")" => RPARtkn::(lex rst)
+              | "-" => (case rst of
+                            (">"::rst) => ARRtkn::(lex rst)
+                          | _ => lerr "disallowed symbol after - " rst )
+              | ";" => SCOLtkn::(lex rst)
+              | _ => lerr ("disallowed symbol"^fst) rst
+and
+    getnum nil n = (n, nil)
+  | getnum (fst::rst) n =
+      if isdigit fst then getnum rst (10*n + (num fst))
+      else (n, fst::rst)
+and
+    getalphanr nil str = (str, nil)
+  | getalphanr (fst::rst) str =
+      if isalphanr fst then getalphanr rst (str^fst)
+      else (str, fst::rst) ;
+
+(*
+val lex = fn : string list -> token list
+val getnum = fn : string list -> int -> int * string list
+val getalphanr = fn : string list -> string -> Ide * string list
+*)
+
+
+Example
+
+val ourprogtext = "\
+   \ val twice : (int->int)->(int->int) = \n\ 
+        \ fn f:int->int => fn x:int => f(f x); \n\
+   \ val double : int->int = fn y:int => plus y y; \n\
+   \ val quadruple : int->int = twice double; \n\
+   \ let val cos = quadruple 7 in \n\
+   \   if less cos 30 then quadruple 8 \n\
+   \   else cos \n\
+   \ end; " ;
+
+val ourprogtkns = (lex (explode ourprogtext)) ;
+
+(*
+val ourprogtext =
+  " val twice : (int->int)->(int->int) = \n fn f:int->int => fn x:int => f#"
+  : string
+val ourprogtkns =
+  [VALtkn,IDtkn "twice",COLtkn,LPARtkn,INTtkn,ARRtkn,INTtkn,RPARtkn,ARRtkn,
+   LPARtkn,INTtkn,ARRtkn,...] : token list
+*)
+
+
+To print this somehow:
+
+fun wypisz tkn =
+     case tkn of
+          (IDtkn id) => output(std_out, "IDtnk "^id^",")
+        | (NUMtkn n) => output(std_out, "NUMtkn,")
+        | VALtkn => output(std_out, "VALtkn,")
+        | COLtkn => output(std_out, "COLtkn,")
+        | EQtkn => output(std_out, "EQtkn,")
+        | FNtkn => output(std_out, "FNtkn,")
+        | DARRtkn => output(std_out, "DARRtkn,")
+        | IFtkn => output(std_out, "IFtkn,")
+        | THENtkn => output(std_out, "THENtkn,")
+        | ELSEtkn => output(std_out, "ELSEtkn,")
+        | LETtkn => output(std_out, "LETtkn,")
+        | INtkn => output(std_out, "INtkn,")
+        | ENDtkn => output(std_out, "ENDtkn,")
+        | LPARtkn => output(std_out, "LPARtkn,")
+        | RPARtkn => output(std_out, "RPARtkn,")
+        | TRUEtkn => output(std_out, "TRUEtkn,")
+        | FALSEtkn => output(std_out, "FALSEtkn,")
+        | INTtkn => output(std_out, "INTtkn,")
+        | BOOLtkn => output(std_out, "BOOLtkn,")
+        | ARRtkn => output(std_out, "ARRtkn,")
+        | SCOLtkn => output(std_out, "SCOLtkn,");
+
+
+
+
+fun printall (tkns : token list) =
+    (case tkns of
+         nil => ()
+       | (fst::rst) => (wypisz(fst); printall rst));
+
+printall ourprogtkns;
+
+(*
+val wypisz = fn : token -> unit
+val printall = fn : token list -> unit
+
+VALtkn,
+  IDtnk twice,COLtkn,
+      LPARtkn,INTtkn,ARRtkn,INTtkn,RPARtkn,ARRtkn,
+         LPARtkn,INTtkn,ARRtkn,INTtkn,RPARtkn,
+  EQtkn,
+  FNtkn,IDtnk f,COLtkn,INTtkn,ARRtkn,INTtkn,
+     DARRtkn,
+        FNtkn,IDtnk x,COLtkn,INTtkn,
+           DARRtkn,IDtnk f,LPARtkn,IDtnk f,IDtnk x,RPARtkn,
+SCOLtkn,
+VALtkn,
+  IDtnk double,COLtkn,INTtkn,ARRtkn,INTtkn,
+  EQtkn,
+  FNtkn,IDtnk y,COLtkn,INTtkn,
+     DARRtkn,
+        IDtnk plus,IDtnk y,IDtnk y,
+SCOLtkn,
+  VALtkn,IDtnk quadruple,COLtkn,INTtkn,ARRtkn,INTtkn,
+  EQtkn, IDtnk twice,IDtnk double,
+SCOLtkn,
+  LETtkn,VALtkn,IDtnk cos,EQtkn,IDtnk quadruple,NUMtkn,
+  INtkn,
+     IFtkn,IDtnk less,IDtnk cos,NUMtkn,
+     THENtkn,IDtnk quadruple,NUMtkn,
+     ELSEtkn,IDtnk cos,
+  ENDtkn,
+SCOLtkn,
+*)
+
+
+
+
+PARSING
+
+exception PARSE_ERR of (string * token list) ;
+
+fun perr str rst = raise PARSE_ERR (str^" expected", rst);
+
+exception NOEXP and NODECL and NOTYPE ;
+
+fun pr_prog tkns = 
+     let val (decls, rst) = pr_decls tkns in
+       let val (expr, rst) = pr_expr rst in
+         case rst of
+              (SCOLtkn::nil) => PROG (decls, expr)
+            | (SCOLtkn::cos) => perr "nothing" cos
+            | _ => perr "semicolon" rst
+       end handle NOEXP => perr "expression" rst
+     end
+and 
+    pr_decls nil = perr "declarations" nil
+  | pr_decls tkns =
+      let val (decl,rst) = pr_decl tkns in
+        case rst of
+             (SCOLtkn::rst) => 
+                let val (decls, rst) = pr_decls rst in
+                  (decl::decls, rst)
+                end
+           | other => perr "semicolon" other
+      end handle NODECL => ([], tkns)
+and
+    pr_decl (VALtkn::(IDtkn id)::COLtkn::rst) =
+      (let val (tp, rst) = pr_type rst in
+        case rst of 
+             (EQtkn::rst) =>
+                (let val (expr,rst) = pr_expr rst in
+                  (DECL(id, SOME tp, expr), rst)
+                end handle NOEXP => perr "expression" rst)
+           | _  => perr "=" rst
+      end handle NOTYPE => perr "type" rst)
+  | pr_decl (VALtkn::(IDtkn id)::EQtkn::rst) =
+      (let val (expr,rst) = pr_expr rst in
+        (DECL (id, NONE, expr), rst)
+      end handle NOEXP => perr "expression" rst)
+  | pr_decl (VALtkn::(IDtkn id)::rst) = perr ": or =" rst
+  | pr_decl (VALtkn::rst) = perr "identifier" rst
+  | pr_decl (_) = raise NODECL
+
+
+
+
+
+and
+    pr_type (INTtkn::ARRtkn::rst) =
+      (let val (tp, rst) = pr_type rst in
+        (ARROW(INTtp,tp), rst)
+      end handle NOTYPE => perr "type" rst)
+  | pr_type (INTtkn::rst) = (INTtp, rst)
+  | pr_type (BOOLtkn::ARRtkn::rst) =
+      (let val (tp, rst) = pr_type rst in
+        (ARROW(BOOLtp,tp), rst)
+      end handle NOTYPE => perr "type" rst)
+  | pr_type (BOOLtkn::rst) = (BOOLtp, rst)
+  | pr_type (LPAR::rst) =
+      (let val (tp, rst) = pr_type rst in
+        case rst of
+             (RPAR::rst) => 
+                (case rst of
+                     (ARRtkn::rst) => 
+                        (let val (tp2, rst) = pr_type rst in
+                           (ARROW(tp,tp2), rst)
+                         end handle NOTYPE => perr "type" rst)
+                   | _ => (tp, rst))
+           | _ => perr ")" rst
+      end handle NOTYPE => perr "type" rst)
+  | pr_type (_) = raise NOTYPE
+and
+    pr_expr tkns =
+      let val (exprs, rst) = (pr_exprs tkns) in
+        case exprs of
+             nil => raise NOEXP
+           | (exp::exprs) => let fun apply [] exp = exp
+                        | apply (exp1::exps) exp =
+                            apply exps (APPexp(exp, exp1))
+                  in (apply exprs exp, rst) end
+      end
+
+
+
+
+
+and
+    pr_exprs ((IDtkn id)::rst) =
+      let val (exprs,rst) = pr_exprs rst in
+        ((IDE id)::exprs, rst)
+      end
+  | pr_exprs (FNtkn::rst) =
+      let val (fnexpr,rst) = pr_fn_expr rst in ([fnexpr], rst) end
+  | pr_exprs (IFtkn::rst) =
+      let val (ifexpr,rst) = pr_if_expr rst in ([ifexpr], rst) end
+  | pr_exprs (LETtkn::rst) =
+      let val (letexpr,rst) = pr_let_expr rst in ([letexpr], rst) end
+  | pr_exprs (LPARtkn::rst) =
+      (let val (expr, rst) = pr_expr rst in
+        case rst of
+             (RPARtkn::rst) =>
+                let val (exprs, rst) = pr_exprs rst in
+                  (expr::exprs, rst)
+                end
+           | _ => perr ")" rst
+      end handle NOEXP => perr "expression" rst)
+  | pr_exprs ((NUMtkn n)::rst) =
+      let val (exprs,rst) = pr_exprs rst in
+        ((INTcon n)::exprs,rst)
+      end
+  | pr_exprs (TRUEtkn::rst) =
+      let val (exprs,rst) = pr_exprs rst in
+        ((BOOLcon true)::exprs,rst)
+      end
+  | pr_exprs (FALSEtkn::rst) =
+      let val (exprs,rst) = pr_exprs rst in
+        ((BOOLcon false)::exprs,rst)
+      end
+  | pr_exprs other = (nil, other)
+and
+    pr_fn_expr ((IDtkn id)::COLtkn::rst) =
+      (let val (tp,rst) = pr_type rst in
+        case rst of
+             (DARRtkn::rst) => 
+                (let val (expr,rst) = pr_expr rst in
+                  (FNexp (id,tp,expr), rst)
+                end handle NOEXP => perr "expression" rst)
+           | _ => perr "=>" rst
+       end handle NOTYPE => perr "type" rst)
+  | pr_fn_expr ((IDtkn id)::other) = perr ":" other
+  | pr_fn_expr (other) = perr "identifier" other
+
+
+
+
+
+and
+    pr_if_expr tkns =
+      let val (expr1, rst) = pr_expr tkns in
+        case rst of
+             (THENtkn::rst) => 
+                (let val (expr2,rst) = pr_expr rst in
+                  case rst of
+                       (ELSEtkn::rst) => 
+                          (let val (expr3,rst) = pr_expr rst in
+                            (IFexp(expr1,expr2,expr3), rst)
+                          end handle NOEXP => perr "expression" rst)
+                     | _ => perr "else" rst
+                 end handle NOEXP => perr "expression" rst)
+           | _ => perr "then" rst
+       end handle NOEXP => perr "expression" tkns
+and
+    pr_let_expr tkns =
+      let val (decl, rst) = pr_decl tkns in
+        case rst of
+             (INtkn::rst) => 
+                (let val (expr, rst) = pr_expr rst in
+                  case rst of
+                       (ENDtkn::rst) =>
+                           (LETexp(decl,expr),rst)
+                     | _ => perr "end" rst
+                end handle NOEXP => perr "expression" rst)
+            | _ => perr "in" rst
+      end handle NODECL => perr "declaration" tkns ;
+
+(*
+val pr_prog = fn : token list -> Prog
+val pr_decls = fn : token list -> Decl list * token list
+val pr_decl = fn : token list -> Decl * token list
+val pr_type = fn : token list -> Type * token list
+val pr_expr = fn : token list -> Expr * token list
+val pr_exprs = fn : token list -> Expr list * token list
+val pr_fn_expr = fn : token list -> Expr * token list
+val pr_if_expr = fn : token list -> Expr * token list
+val pr_let_expr = fn : token list -> Expr * token list
+*)
+
+
+Example
+
+val ourprog = (pr_prog ourprogtkns) ;
+
+P ourprog;
+
+(*
+val ourprog =
+  PROG ([DECL (#,#,#),DECL (#,#,#),DECL (#,#,#)],LETexp (DECL #,IFexp #))
+  : Prog
+val it = INTval 32 : Val
+*)
+
+
+PUTTING ALL PARTS TOGETHER:
+
+
+fun run str =
+    P(pr_prog(lex(explode str)))
+    handle LEXICAL_ERR (str,str1) =>
+                     (output(std_out, str^"\n"^str1^"\n");
+		      raise LEXICAL_ERR (str,str1))
+         | PARSE_ERR (str,tkns) =>
+                     (output(std_out, str^"\n");
+                      (printall tkns);
+		      raise PARSE_ERR (str,tkns))
+         | DTR str => (output(std_out,str^"\n");
+			      raise DTR str) ;
+(*
+val run = fn : string -> Val
+*)
+
+
+Example:
+
+run ourprogtext;
+
+(*
+val it = INTval 32 : Val
+*)
+
+

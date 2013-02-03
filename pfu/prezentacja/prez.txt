@@ -1,0 +1,60 @@
+SOOPL --- Simple Object-Oriented Programming Language
+(http://rainbow.mimuw.edu.pl/~mm/hp/soopl)
+
+
+1. Jêzyk
+
+1.1 za³o¿enia (oparte na Smalltalku)
+* jêzyk czysto obiektowy, z minimalnym zestawem instrukcji w rodzaju pêtli, instr warunkowe itp., 
+* oparty o pojêcia obiektu i komunikatu
+* biblioteka klas
+* ma³a sk³adnia --- w zasadzie tylko wysy³anie komunikatów + konieczne rzeczy (zwrot warto¶ci, przypisanie)
+* dynamiczna kontrola typów [w implementacji: wnioskowanie o typach oparte na mechanizmach SMLa]
+* dynamiczna dyspozycja (wi±zanie metod) [jak obiekt nie rozumie komunikatu, to jest b³±d w czasie wykonania]
+* bloki wykonywane w kontek¶cie z miejsca deklaracji [jak w St; ciekawy efekt: przesy³anie ich jako argumenty do metod] 
+
+1.2 przyjête rozwi±zania
+* bloki bezparametrowe
+* typy: obiekt, blok, pierwotny (integer)
+* statyczna klasyfikacja (wi±zanie obiektu do klasy)
+
+1.3 Mo¿liwe rozszerzenia
+[ogólnie: rezygnacja z przyjêtych rozwi±zañ]
+* rezygnacja z typu pierwotnego --- automatyczne opakowywanie (boxing)
+  [korzystanie z typu pierwotnego jest ogólnie nieeleganckie, czêsto koduje warto¶ci, które powinny byæ widoczne tylko jako obiekty (np. Boolean) i programista musi z tego explicite korzystaæ --- patrz przyk³ad]
+* rezygnacja z typu blokowego
+* bloki z parametrami
+
+1.4 Biblioteka klas
+{wypisaæ klasy}
+
+1.5 Przyk³adowy program (Fibonacci)
+{program}
+
+
+
+2. Program
+
+2.1 Specyfikacja
+Podstawa dla interpretera: semantyka denotacyjna jêzyka (oparta o kontynuacje). [dostêpna na www] [dygresja: problemy z semantykami dla jêzyków obiektowych. to¿samo¶æ obiektu, dziedziczenie itp. Tu proste rozwi±zanie: pamiêæ obiektów, na wzór St]
+Wej¶cie: stan, ¶rodowisko, tekst programu; 
+Wyj¶cie: stan i ¶rodowisko zmodyfikowane zgodnie z semantyk± SOOPL.
+
+2.2 Etapy projektowania
+* warstwa procesów: lexer -> parser -> interpreter
+* warstwa danych: program code -> tokens -> syntactic domains -> semantic domains
+* dodatkowe modu³y: class library, rozbicie semantic domains
+
+2.2 Hierarchia modu³ów
+
+{obrazek}
+
+2.3 Przyk³ady kodu
+2.3.1 Aksjomat
+{subst}
+
+2.3.1 Biblioteka klas
+{klasa Boolean}
+
+2.x Mo¿liwe rozszerzenia i usprawnienia
+* lepsze zarz±dzanie pamiêci± (struktury Memory i Environment) --- efektywna struktura danych, automatyczne od¶miecanie itp.

@@ -1,0 +1,2 @@
+Lab exercises and final project from Functional Programming. The course was based on Standard ML and the focus of the project was to design and present an application whose architecture can be expressed as
+application of functors (i.e. module transformers) to stand-alone modules. The course coincided with Semantics and Verification, so I re-used the interpreter written for the latter, modularising it, adding a parser and a class library to create a fully-functional interpreter of a simple language.
