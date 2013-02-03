@@ -1,0 +1,24 @@
+module OX {
+
+  interface Board {
+    long get_cell(in long x, in long y);
+    long set_cell(in long x, in long y, in long val);
+
+    readonly attribute long size_x;
+    readonly attribute long size_y;
+  };
+
+  interface GamePresenter {
+    void update(in string msg, in boolean move);
+    void updateBoard(in Board brd, in string msg, in boolean move);
+    void disconnect();
+  };
+
+  interface Game {
+    long register(in GamePresenter pr);
+    void unregister(in long ox);
+    long make_move(in long x, in long y, in long ox);
+    long start_new();
+  };
+  
+};

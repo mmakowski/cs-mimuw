@@ -1,0 +1,376 @@
+1. 14.02.2002
+
+-- organizacja ----------------------------------------------------
+~alx/SieciD/
+
+3 zadania na zaliczenie
+* sockets
+* RPC
+* CORBA
+
+16 pktów na zaliczenie
+
+------------------------------------------------------------------
+CLIENT
+
+funkcje:
+
+gethostname	- zwraca nazwę komputera na którym się wykonuje
+gethostbyname	- zwraca adres IP na podstawie nazwy (już w postaci
+		sieciowej, bez konieczności konwertowania przez htonl)
+
+socket  - rezerwuje zasoby systemowe
+	domain   : dajemy PF_INET
+	type     : najczęściej SOCK_STREAM
+	protocol : 0 (prawie nigdy nie ma alternatywy, jak 0 - system
+		   sam wybierze)	
+	zwraca socket (deskryptor - wartość dodatnia)
+
+connect - inicjalizacja połączenia (klient jest aktywną stroną)
+	sockaddr_in - struktura specyficzna dla protokołu
+	internetowego. Każdy protokół ma swoją wersję struktury, przy
+	przekazywaniu do connect trzeba rzutować na (struct sockaddr*)
+	Co jest w struct sockaddr_in? 
+	sin_family - (na ogół jest coś jak s??_family). To jest
+		   pierwsze pole w strukturze (wiadomo, że w każdej
+		   strukturze to jest). Tutaj ma wartość AF_INET (=
+		   PF_INET).
+	sin_addr   - struktura: s_addr (4 bajty, htonl), s_port (2
+				bajty, htons).
+	w connect odbywa się rezerwacja portu klienta.
+		
+read    - wiadomo 
+
+write	-  -//-
+
+uwaga: jeżeli write wyśle np 5 bajtów, to read wcale nie musi
+przeczytać całej tej porcji - być może potrzebne będą 2
+ready. Wniosek: często trzeba wykonywać read/write w pętli. Musi być
+dokładnie ustalony protokół komunikacyjny, np. że w danym momencie
+oczekuje ciągu 5 bajtów. 
+
+close   - zakończenie połączenia
+
+jak sprawdzić, czy druga strona wykonała close (zamknęła połączenie)?
+Jak read (nieblokująco) da w wyniku 0, to połączenie jest zamknięte.
+
+Uwaga: read i write są specyficzne dla uniksa. Pod Win jest też
+biblioteka gniazd, ale nie ma read i write - są receive i send (takie
+samo wywłanie i semantyka jak read/write). Można ich używać pod
+uniksami.
+
+
+SERVER
+funkcje:
+
+getsockname
+
+bind   - rezerwacja numeru portu na serwerze.
+       parametry podobnie jak przy connect. Jak sin_addr.s_addr jest 
+       INADDR_ANY, serwer ma działać na wszystkich adresach IP
+       związanych z tym komputerem (loopback, wszystkie interfejsy
+       ethernetowe etc.). Jak sin_addr.s_port jest 0, system sam
+       wybierze numer portu. Ale wtedy klient musi się jakoś
+       dowiedzieć, jaki jest ten numer - trzeba mu to powiedzieć.
+       Na ogół podaje się wprost numer portu.
+
+listen - ustawienie długości kolejki oczekiwania.
+       backlog : długość kolejki - maksymalna przenośna wartość to
+		 5. Na linuksie można więcej (chyba do 128), ale lepiej
+		 nie dawać więcej niż 5.
+
+accept - pętla, w której wykonywane jest czekanie na klientów.
+       zwraca nowego socketa, który służy do komunikacji z klientem.
+       addr    : adres klienta
+       addrlen : po powrocie tu będzie wpisany rozmiar struktury
+	         adresu.
+
+
+zad: 
+
+1. przerobić serwer tak, żeby jak mu się poda odpowiednią opcję to
+ustawiał podany numer portu, a jak nie, to żeby się odpalał na porcie
+1025 (do 1024 może rezerwować tylko administrator).
+
+2. przerobić tak, żeby mógł obsługiwać na raz 2 klientów.
+
+3. wypisywać na konsoli serwera, z jakiego adresu połączył się klient.
+
+------------------------------------------------------------------
+==================================================================
+2. 21.02.2002
+
+------------------------------------------------------------------
+SERWERY WSPÓŁBIEŻNE
+
+* trzeba obsługiwac SIGCHLD - należy go ignorować, wtedy system sam po
+pewnym czasie usunie zombie.
+
+getpeername() - daje adres klienta
+inet_ntop()   - przekształca numer na nazwę
+
+--------------
+komunikacja uniksowa (AF_UNIX):
+
+socket(): podajemy AF_UNIX 
+bind():	  konwertujemy union sockaddr_un do struct sockaddr.
+
+------------------------------------------------------------------
+==================================================================
+3. 28.02.2002
+
+------------------------------------------------------------------
+
+select(n, readfds, writefds, exceptfds, timeout)
+
+	  * readfds, writefds, exceptfds - zbiory związane z: gotowością
+	  do odczytu, gotowością do zapisu, sytuacjami wyjątkowymi.
+	  exceptfds: w TCP: pewne dane mogą być pilne, w tym miejscu
+	  można to śledzić.
+	  * n = (max readfds u writefds u exceptfds) + 1
+	  * timeout: jak będzie null, to oczekuje w nieskończoność.
+
+makra do operacji na fd_set:
+      * FD_ZERO(fds) - fds staje się pusty
+      * FD_SET(fd, fds) - wstawia fd do fds
+      * FD_CLR(fd, fds) - usuwa fd z fds
+      * FD_ISSET(fd, fds) - sprawdza, czy fd jest w fds
+
+UWAGA: po wyjściu z selecta te ziory są modyfikowane - pozostają w
+nich tylko te deskryptyory, dla których zaszły odpowiednie zdarzenia
+(gotowość do odczytu/zapisu/sytuacja wyjątkowa).
+
+pętla selecta ma ustaloną strukturę:
+      1. włożenie deskryptorów do zbiorów
+      2. select
+      3. sprawdzenie, które deskryptory są aktywne + operacje na
+	 aktywnych
+
+UWAGA: potrzebujemy jakiejś struktury zawierającej wszystkie
+interesujące nas deskryptory, po której będziemy interować w 1 i 3.
+
+zad:
+
+1. przerobić s_server2.c tak, żeby obsługiwał kilku klientów na raz
+2. przerobić tak, żeby korzystał z poll.
+
+
+poll:
+
+podobna funkcjonalność do selecta
+
+------------------------------------------------------------------
+==================================================================
+4. 7.03.2002
+
+------------------------------------------------------------------
+
+Zadanie 1: UDP -> TCP
+
+ref: man udp
+
+UDP: protokół zapewniający w przeciwieństwie do TCP komunikację
+pakietową (nie strumieniową) - niewielka nadbudowa nad IP. Adres UDP
+składa się z adresu IP komputera i 16 bitowego numeru
+portu. Przestrzenie adresowe TCP i UDP są rozłączne. Komunikacja po
+UDP jest zawodna - nie ma gwarancji dostarczenia datagramu.
+
+Interfejs programistyczny:
+
+mechanizm taki sam jak w przypadku TCP - są deskryptory gniazd,
+uzyskuje się je:
+
+socket(PF_INET, SOCK_DGRAM, 0)
+* bind - tak samo jak w TCP
+* też używa się struktury sockaddr_in.
+* connect - pozwala, żeby zamiast sendto używać send; związuje zdalną
+  część adresu z lokalnym adresem
+(protokół UDP jest bezpołączeniowy - connect nie powoduje żadnej
+komunikacji sieciowej).
+
+Przekazywanie danych: normalnie nie można po prostu używać read/write:
+
+sendto(_, _, _, int flags, struct sockaddr *dest, int len)
+send(_, _, _, int flags)
+read(_, _, _)
+  - to wysyła dane jako 1 pakieg UDP (max wielkość pakietu: 164 KB)
+
+recvfrom(_, _, _, int flags, struct sockaddr *src, int *len)
+recv(_, _, _, int flags)
+read(_, _, _)
+ - jedno wywołanie fcji odbierającej odpowiada odebranie jednego
+   pakietu; jak w recvfrom len będzie za mała, to nadmiarowa część pakietu
+   zostanie odrzucona.
+
+Deskryptor zamyka się fcją close();
+
+------------------------------------------------------------------
+==================================================================
+5. 14.03.2002
+
+------------------------------------------------------------------
+
+RPC
+
+problem: różne architektury na różnych maszynach (np. reprezentacja
+integerów)
+rozwiązanie: XDR - extended data reprezentation. Przerabia się
+najpierw lokalną reprezentację na XDR, przesyła XDR, i na drugiej
+stacji z powrotem przekształca się XDR na lokalną wewnętrzną.
+
+(oprócz Sun RPC jest DCE RPC, CORBA (obiektowa), DCOM)
+
+przestrzenie numerów prgramów:
+0x00000000 - 0x1ffffff: zarezerwowane na programy publiczne
+0x20000000 - 0x3ffffff: przestrzeń dla testów (stąd bierzemy numer)
+
+numery procedur:
+0 - zarezerwowany
+swoim procedurom nadajemy od 1.
+
+uwaga: taki numer programu nie da się zakodować w numerze portu (jest
+za duży). Potrzebne jest coś, co umie przekształcać numery programów
+na numery portów - do tego służy serwer portmap (działa na porcie
+111).
+
+registerrpc(nrprog, nrwersji, nrproc, char* proc(char*), proc_tlum_arg,
+proc_tlum_wyn)
+
+proc_tlum_arg: tłumaczy parametr proc z XDR na repr. lokalną
+proc_tlum_wyn: tłumaczy wynik proc z repr. lokalnej na XDR
+w bibliotece są procedury dla standardowych typów (xdr_void, xdr_u_int
+itp.)
+
+uwaga: registerrpc jest przestarzałe - obecny standard nie zaleca
+korzystania z tego wywołania.
+
+uwaga: zmianna, do której zwracamy wskaźnik w proc powinna być zadeklarowana
+jako static. RPC gwarantuje, że dwie instancje tej samej procedury nie
+będą uruchamiane jednocześnie.
+
+svc_run() - procedura zawierająca pętlę oczekiwania na zlecenia od
+klientów.
+
+callrpc(nazwa_hosta, nrprog, nrwersji, nrproc, proc_tlum_arg, wsk_arg,
+proc_tlum_wyn, wsk_wynik)
+
+uwaga: procedury tłumaczące (xdr_void itp.) z kontekstu rozpoznają, w
+ktrą stronę mają tłumaczyć.
+
+------------------------------------------------------------------
+==================================================================
+6. 21.03.2002
+
+------------------------------------------------------------------
+
+RPC cd.
+
+dupa.
+
+------------------------------------------------------------------
+==================================================================
+7. 28.03.2002
+
+------------------------------------------------------------------
+
+rpcgen - program automatycznie generujący kod RPC. Bierze plik ?.x i
+generuje cztery pliki:
+* ?.h		- plik nagłówkowy z deklaracjami procedur
+* ?_clnt.c	- procedury pomocnicze (obudowanie callrpc)
+* ?_svc.c	- serwer i procedura wyboru
+* ?_xdr.c	(jeżeli są definicje własnych typów danych)
+
+zajrzeć do : /usr/include/rpcsvc
+
+------------------------------------------------------------------
+==================================================================
+8. 04.04.2002
+
+------------------------------------------------------------------
+
+CORBA ~ RPC++
+
+model klient - serwer:
+odwołanie:
+klient -> obiekt szkieletowy -> ORB -> [sieć] -> ORB -> object adapter
+-> serwer
+
+obiekt szkieletowy: interfejs
+
+object adapter: zarządzanie własnościami obiektu, np.:
+- czy obiekt znajduje się na serwerze
+- jak wygląda model współbieżności do obiektu (czy jest możliwa
+  współbieżność, jak to wygląda dla konkretnych metod (ilu klientów
+  może się na raz do nich odwoływać)
+
+ORB: centralny element software'owy (na ogół jakaś biblioteka, może
+być też elementem jądra systemu). Są różne ORBy (-> CORBA1.txt).
+
+* zapewnia obiekty trwałe (przeżywające procesy je obsługujące)
+* jest narzędzie podobne do rpcgen - piszemy opis interfejsu obiektu,
+  generujemy kod i linkujemy część z klientem, a część z serwerem.
+
+omniidl:
+opcja -bcxx -> tworzy pliki c++
+
+przykłady:
+
+echo.idl
+
+* można używać takich makr jak w c
+* parametry metod są in, out lub inout
+* może być wiele parametrów dla metody (inaczej niż w RPC), każdy ma 
+  niezależnie przypisywaną właściwośc in/out/inout
+
+eg1.cc
+
+* Echo_i będzie zarządzany przez Object Adapter POA_Echo (Portable
+Object Adapter)
+* PortableServer::RefCountServantBase - zarządza życiem obiektu na
+podstawie odwołań do niego.
+* char * CORBA::string_dup(const char *) - duplikuje string wejściowy -
+nie możemy bezpośrednio dać tego stringu co przyszedł, bo jego życiem
+zarządza biblioteka CORBA - gdybyśmy go zwrócili, prawdopodobnie byłby
+Segmentation Fault.
+* string z IDL jest przekształcany do C++ na char *
+* CORBA::String_var src = (const char *) "Hello!" - rzutowanie na
+(const char *) powoduje, że napis zostanie PRZEKOPIOWANY do src.
+* dwa rodzaje typów wskaźnikowych: Nazwa_var i Nazwa_ptr.
+  Nazwa_var: jeżeli z obiektem związana jest jakaś pamięć, to po
+	     wyjściu z bloku w którym zadeklarowana jest zmienna tego
+	     typu, ta pamięć jest zwalniana
+  Nazwa_ptr: trzeba jawnie alokować/dealokować pamięć.
+  (ten sam wskaźnik może być zadeklarowany jako var, a przekazany
+  jako ptr - są operatory automatycznej konwersji. Jak do var wkładamy
+  ptr, następuje kopiowanie zawartości)
+* tworzenie POA - specyficzne dla serwera
+* PortableServer::POA::_narrow(obj) - rzutowanie (specjalnie dla
+  CORBY, bardziej elastyczne niż wbudowane w język)
+* activate_object(obj) - aktywuje podany obiekt i daje jego id
+* _this() - daje referencję (~wskaźnik) do obiektu
+* _remove_ref() - zeruje licznik referencji dla obiektu (zwiększył się
+  przy wkładaniu do POA i przy wywołaniu _this()).
+* object_to_string(obj) - przerabia obiekt CORBy na napis
+* string_to_object(str) - vv.
+
+------------------------------------------------------------------
+==================================================================
+9. 11.04.2002
+
+------------------------------------------------------------------
+
+IDL
+
+-> plik .txt w 09-corba
+
+* składnia IDLa
+
+-> README w 09-corba-mm
+
+zadanie:
+* włożyć klasę Echo w moduł Terminals
+* stworzyć MyEcho dziedziczące po Echo z dodatkową metodą
+  konfigurującą liczbę powtórzeń napisów odesłanych przez serwer.
+* użyć fcji hello z eg2_clt do korzystania z MyEcho (łatwe)
+* pobawić się zamieniając Echo_ptr na Echo_var
+
