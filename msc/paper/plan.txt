@@ -1,0 +1,47 @@
+0. Wstêp
+* Co to s± specyfikacje algebraiczne, co to jest CASL, co jest opisane w pracy.
+
+
+1. Analiza statyczna specyfikacji algebraicznych
+
+1.1 Niezale¿no¶æ od instytucji
+* Co to s± instytucje, dlaczego semantyka specyfikacji architekturalnych jest niezale¿na od instytucji.
+* Jak zdefiniowana jest semantyka specyfikacji architekturalnych -- basic i extended static semantics (przyk³ad dla jednej/dwóch konstrukcji za Reference Manual).
+* Jakie w³asno¶ci musz± zostaæ sprawdzone na poziomie konkretnej instytucji (amalgamowalno¶æ).
+
+1.2 Analiza amalgamowalno¶ci dla CASL
+(na podstawie pracy "Checking Amalgamability Conditions for CASL Architectural Specifications")
+* Dlaczego analiza jest w ogólnym przypadku nierozstrzygalna?
+* Algorytm sprawdzania amalgamowalno¶ci.
+
+
+2. Implementacja
+
+2.1 Projekt Hets
+* Podstawy organizacji kodu ¼ród³owego.
+* W jaki sposób realizowana jest heterogeniczno¶æ/niezale¿no¶æ od instytucji?
+
+2.2 Parsowanie
+* Kilka s³ów o Parsec.
+
+2.3 Analiza statyczna
+* Opis t³umaczenia regu³ semantycznych z Reference Manual do Haskella.
+
+2.4 Analiza amalgamowalno¶ci dla CASL
+* Opisy algorytmów.
+
+
+3. Podsumowanie
+
+* Krótkie podsumowanie wykonanej pracy.
+* Co pozosta³o do zrobienia?
+
+
+
+Dodatki
+
+A. Dokumentacja techniczna kodu
+* Spis modu³ów i funkcji.
+
+B. Przyk³adowe specyfikacje
+* Przyk³ady specyfikacji, podczas analizy których stosowane s± zaimplementowane algorytmy.

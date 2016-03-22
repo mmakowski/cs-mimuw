@@ -1,0 +1,98 @@
+\newcommand{\QUERY}[1]%{}
+{\marginpar{\raggedright\hspace{0pt}\small #1\\~}}
+
+\newcommand{\eat}[1]{}
+
+\newenvironment{EXAMPLE}[1][]   {\par#1\begin{EXAMPLEFORMAT}\begin{ITEMS}}
+                                {\end{ITEMS}\end{EXAMPLEFORMAT}}
+\newcommand{\IEXT}[1]           {\\#1\I}
+\newcommand{\IEND}              {\I\END}
+\newenvironment{EXAMPLEFORMAT}  {}{}
+
+%% Added by MB to have some extra vertical space after the ``main'' examples
+%% following the points (and some others in the text): 
+\newenvironment{BIGEXAMPLE}   {\begin{EXAMPLE}} {\end{EXAMPLE}\medskip}
+\newenvironment{DETAILS}[1][]   {#1\begin{DETAILSFORMAT}}{\end{DETAILSFORMAT}}
+\newenvironment{DETAILSFORMAT}  {}{}
+\newenvironment{META}[1][]      {#1\begin{METAFORMAT}}{\end{METAFORMAT}}
+\newenvironment{METAFORMAT}     {\medskip\vrule\hspace{1ex}\vrule\hspace{1ex}%
+                                 \begin{minipage}{0.9\textwidth}\it}
+                                {\end{minipage}\par\medskip}
+
+\newcommand{\SLIDESMALL}        {}
+\newcommand{\SLIDESONLY}[1]     {}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SIMULATING SMALL-CAPS FOR BOLD, EMPH
+
+\newcommand{\normalTEXTSC}[2]{{#1\scriptsize#2}}
+%% NOT \newcommand{\normalTEXTSC}[2]{{\normalsize#1\scriptsize#2}}
+\newcommand{\largeTEXTSC} [2]{{\large     #1\small     #2}}
+\newcommand{\LargeTEXTSC} [2]{{\Large     #1\normalsize#2}}
+\newcommand{\LARGETEXTSC} [2]{{\LARGE     #1\large     #2}}
+\newcommand{\hugeTEXTSC}  [2]{{\huge      #1\Large     #2}}
+\newcommand{\HugeTEXTSC}  [2]{{\Huge      #1\LARGE     #2}}
+
+
+%\newcommand     {\CASL}{\normalTEXTSC{C}{ASL}\xspace}
+\newcommand{\largeCASL} {\largeTEXTSC{C}{ASL}\xspace}
+\newcommand{\LargeCASL} {\LargeTEXTSC{C}{ASL}\xspace}
+\newcommand{\LARGECASL} {\LARGETEXTSC{C}{ASL}\xspace}
+\newcommand {\hugeCASL}  {\hugeTEXTSC{C}{ASL}\xspace}
+\newcommand {\HugeCASL}  {\HugeTEXTSC{C}{ASL}\xspace}
+
+%\newcommand     {\CoFI}{CoFI\xspace}
+
+\newcommand     {\MAYA}{\normalTEXTSC{M}{AYA}\xspace}
+\newcommand{\largeMAYA} {\largeTEXTSC{M}{AYA}\xspace}
+
+\newcommand     {\Hets}{\normalTEXTSC{H}{ETS}\xspace}
+\newcommand{\largeHets} {\largeTEXTSC{H}{ETS}\xspace}
+\newcommand{\LARGEHets} {\LARGETEXTSC{H}{ETS}\xspace}
+
+\newcommand     {\Cats}{\normalTEXTSC{C}{ATS}\xspace}
+\newcommand{\largeCats} {\largeTEXTSC{C}{ATS}\xspace}
+
+\newcommand     {\ELAN}{\normalTEXTSC{E}{LAN}\xspace}
+\newcommand{\largeELAN} {\largeTEXTSC{E}{LAN}\xspace}
+
+\newcommand     {\HOL}{\normalTEXTSC{H}{OL}\xspace}
+\newcommand{\largeHOL} {\largeTEXTSC{H}{OL}\xspace}
+
+\newcommand     {\Isabelle}{\normalTEXTSC{I}{SABELLE}\xspace}
+\newcommand{\largeIsabelle} {\largeTEXTSC{I}{SABELLE}\xspace}
+
+\newcommand     {\Horn}{\normalTEXTSC{H}{ORN}}
+
+%% Use \ELAN-\CASL, \HOL-\CASL, \Isabelle/\HOL
+
+\newcommand{\LCF}{LCF\xspace}
+
+\newcommand{\ASF}{ASF\xspace}
+%%\newcommand     {\ASF}{\normalTEXTSC{A}{SF}\xspace}
+%%\newcommand{\largeASF} {\largeTEXTSC{A}{SF}\xspace}
+
+\newcommand{\SDF}{SDF\xspace}
+%%\newcommand     {\SDF}{\normalTEXTSC{S}{DF}\xspace}
+%%\newcommand{\largeSDF} {\largeTEXTSC{S}{DF}\xspace}
+
+\newcommand     {\ASFSDF}{\normalTEXTSC{A}{SF}+\normalTEXTSC{S}{DF}\xspace}
+\newcommand{\largeASFSDF} {\largeTEXTSC{A}{SF}+\largeTEXTSC{S}{DF}\xspace}
+
+\newcommand     {\HasCASL}{\normalTEXTSC{H}{AS}\normalTEXTSC{C}{ASL}\xspace}
+\newcommand{\largeHasCASL} {\largeTEXTSC{H}{AS}\largeTEXTSC{C}{ASL}\xspace}
+
+%% Do NOT use \ASF+\SDF (it gives a superfluous space in the middle)
+
+\newcommand{\CCC}{CCC\xspace}
+
+\newcommand{\CoCASL}{\normalTEXTSC{C}{O}\normalTEXTSC{C}{ASL}\xspace}
+\newcommand{\CspCASL}{\normalTEXTSC{C}{SP}-\normalTEXTSC{C}{ASL}\xspace}
+\newcommand{\Csp}{\normalTEXTSC{C}{SP}\xspace}
+\newcommand{\CcsCASL}{CCS-\normalTEXTSC{C}{ASL}\xspace}
+\newcommand{\CASLLtl}{\normalTEXTSC{C}{ASL}-\normalTEXTSC{L}{TL}\xspace}
+\newcommand{\CASLChart}{\normalTEXTSC{C}{ASL}-\normalTEXTSC{C}{HART}\xspace}
+\newcommand{\SBCASL}{\normalTEXTSC{S}{B}-\normalTEXTSC{C}{ASL}\xspace}
+\newcommand{\HetCASL}{\normalTEXTSC{H}{ET}\normalTEXTSC{C}{ASL}\xspace}
+

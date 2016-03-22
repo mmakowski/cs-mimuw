@@ -1,0 +1,2137 @@
+\documentclass{pracamgr-en}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage[latin2]{inputenc}
+\usepackage{comment}
+\usepackage{a4wide}
+\usepackage{longtable}
+\usepackage{multicol} 
+\usepackage{semantic}
+\usepackage{casl}
+\usepackage{color} 
+\usepackage{url}
+\usepackage[algoruled,vlined]{algorithm2e}
+\usepackage{float}
+\usepackage{latexsym}
+
+\input{xy}
+\xyoption{all}
+\input{diagxy}
+
+% Dane magistranta:
+
+\author{Maciej Makowski}
+
+\nralbumu{189188}
+
+\kierunek{Computer\ \ Science}
+
+% Praca wykonana pod kierunkiem:
+% (podaæ tytu³/stopieñ imiê i nazwisko opiekuna
+% Instytut 
+% ew. Wydzia³ ew. Uczelnia (je¿eli nie MIM UW))
+\opiekun{prof. dr hab. Andrzej Tarlecki\\
+  Institute of Informatics\\
+  }
+
+% miesi±c i~rok:
+\date{August 2004}
+
+% Podaæ klasyfikacjê tematyczn± wed³ug AMS MSC 2000 lub ACM CCS:
+\klasyfikacja{D.2.1 Requirement/Specification\\
+  D.2.2 Design Tools and Techniques\\
+  F.3.1 Specifying and Verifying and Reasoning about Programs}
+
+% Tu jest dobre miejsce na Twoje w³asne makra i~¶rodowiska:
+% \newtheorem{defi}{Definicja}[section]
+\def\TODO{\\\\ \begin{center}{\bf TODO}\end{center}\\\\\\}
+\def\CASL{\textsc{Casl}}
+\def\HasCASL{\textsc{HasCasl}}
+\def\CspCASL{\textsc{Csp-Casl}}
+\def\Hets{\textsc{Hets}}
+\def\webaddr #1{\url{#1}}
+\def\cat #1{\mathrm {\bf #1}}
+\def\Sign{\cat{Sign}}
+\def\Mod{\cat{Mod}}
+\def\Sen{\cat{Sen}}
+\def\code #1{\(#1\)}
+\def\nterm #1{{\sl #1}}
+\def\module #1{\texttt{#1}}
+\def\path #1{\texttt{#1}}
+\def\morphpath #1{\langle #1\rangle}
+\def\seq #1{\langle #1\rangle}
+\def\rulename #1{{\bf(#1)}}
+\def\return #1{\KwSty{return} #1}
+\def\algline #1{{\footnotesize{\bf #1}}}
+\def\centercmd #1{\begin{center}{\tt #1}\end{center}}
+\def\sym #1{$\mathit{#1}$}
+\def\msym #1{\mathit{#1}}
+\def\NodesD{\mathit{Nodes}(D)}
+\def\EdgesD{\mathit{Edges}(D)}
+\newtheorem{stdth}{Theorem}
+\newcommand{\proof}{\par \vskip 5mm\noindent{\bf Proof\@: }}
+\newcommand{\QED}{{\unskip\nobreak\hfil\penalty50
+  \hskip2em\hbox{}\nobreak\hfil$\Box$
+  \parfillskip=0pt \finalhyphendemerits=0 \par}}
+\renewcommand{\QED}{{\unskip\nobreak\hfil\penalty50
+  \hskip2em\hbox{}\nobreak\hfill $\Box$
+  \parfillskip=0pt \finalhyphendemerits=0 \vspace*{3ex}\\}}
+\input{casldefs}
+
+% koniec definicji
+
+\title{An Implementation of a Tool for \CASL\ Architectural Specification Analysis}
+
+
+% S³owa kluczowe:
+\keywords{\CASL, architectural specifications, static
+  analysis, amalgamability}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The static analysis of
+architectural specifications in \CASL\ and the way it has been
+implemented by the author in \nterm{Heterogeneous \CASL\ Tool Set}
+(\Hets) is described. All the 
+stages of processing the specification are presented. The algorithm
+for checking amalgamability conditions in \CASL\ institution is
+discussed in detail.
+\end{abstract}
+
+\tableofcontents
+\listoffigures
+\listofalgorithms
+%\listoftables
+
+
+% ====================================================================
+% INTRODUCTION
+
+\chapter{Introduction}
+%\addcontentsline{toc}{chapter}{Introduction}
+
+This thesis describes the static analysis of \CASL\
+architecural specifications as it is implemented in \Hets\
+system. The current chapter serves as a brief introduction to \CASL\
+and an 
+overview of \Hets. However, reading a thorough description of
+\CASL\ (e.g. \cite{userman}) is strongly recommended and may be
+necessary for understanding more advanced \CASL\ features.
+
+Chapter \ref{staticAnalysis} describes the formal definition of \CASL\
+semantics and the way it may be used to verify static correctness of
+architectural specifications. The notion of \nterm{institution} is
+introduced and \CASL-specific amalgamability checking problem
+is presented.
+The natural formulations of amalgamability condition and cell calculus
+rely on category theory. For the sake of clarity and brevity more
+advanced category-theoretical interpretations have been ommitted and
+intuitive, set-theoretical interpretations are provided instead.
+The assumption was that the ease of comprehension should take
+precedence over formalism; the descriptions are quite verbose in
+order to make 
+understanding the concepts presented easier. For strictly formal
+definition of the cell calculus and cell condition please refer to
+\cite{khtsm1}. Anyway, familiarity with basic category theory may be
+necessary for understanding the concepts presented in this chapter.
+
+This thesis is based on implementation work done by the author, which
+includes parsing of architectural specifications, static analysis of
+architectural specifications and amalgamation analysis for \CASL. In
+chapter \ref{impl} the implementation details are described. Each 
+stage of processing the specification is treated separately, with the
+data structures and functions specified. Whenever a non-trivial
+algorithm is applied, it is illustrated using pseudo-code. The
+knowledge of \nterm{Haskell} programming language might be helpful,
+but is not required.
+
+Similar implementation (completed as a part of CATS system) has
+already been described by Bartek 
+Klin in \cite{klin1}. The implementation described here uses updated
+static semantics (defined in \cite{refman}) and more recent results
+regarding 
+amalgamability condition (presented in \cite{khtsm1}). 
+
+\section{\CASL}
+
+{\sl Algebraic specification} is one of the most extensively developed
+approaches in the area of formal methods. In this approach the program
+is modelled as a {\sl many-sorted algebra} with sets, values and
+functions over those sets. A great deal of research on the theory and
+practice of algebraic specifications has been
+done for past 25 years. However, the proliferation of different
+algebraic specification languages rendered creating a common library
+of examples, case studies etc. impossible and therefore has been a
+major obstacle to adopting these techniques in the industrial
+context. The need for a common framework resulted in 1995 in the
+initiation of {\sl The Common Framework Initiative}
+(CoFI)\footnote{CoFI is pronounced like 'coffee'. See
+  \webaddr{http://www.cofi.info}.}. As soon as in 1997 
+an initial design (with language summary, abstract syntax and formal
+semantics but lacking concrete syntax) of {\it Common Algebraic
+  Specification Language} (\CASL) was proposed. The version 1.0 of
+\CASL\ was released in October 1998, version 1.0.1 followed in April
+2001. The current version, 1.0.2, is documented in the \CASL\
+Reference Manual \cite{refman}. 
+
+\CASL\ is composed of four layers; from bottom to top these are:
+\begin{itemize}
+\item \nterm{basic specifications} --- contain sorts, operations,
+  predicates and axioms which constrain the behaviour of operations
+  and predicates;
+\item \nterm{structured specifications} --- are formed from basic
+  specifications, references to named specifications and
+  instantiations of generic specifications;
+\item \nterm{architectural specifications} --- allow to specify 
+  architecture of the software to be implemented;
+\item \nterm{specification libraries} --- group the specifications from
+  previous layers.
+\end{itemize}
+
+
+\subsection{Basic Specifications}
+
+A \nterm{basic specification} consists of \nterm{symbol declarations} and
+\nterm{axioms} and \nterm{constraints} that restrict the possible
+\nterm{interpretations} of these symbols. The declared symbols may
+represent sorts, operations or predicates interpreted in models in the
+standard way. A subsorting relation
+between sorts might be specified; if $s$ is declared to be a subsort
+of $t$ (written $s < t$) this is interpreted not as an inclusion of the
+carrier set of $s$ into the carrier set of $t$ but more generally, as
+an \nterm{embedding}, i.e. a 1-1 function from the carrier set of $s$
+to the carrier set of $t$. The subsort embeddings are required to
+commute: subsort declarations $s < t$, $t < u$ and $s < u$ specify the
+existence of embeddings $\alpha$, $\beta$ and $\gamma$ (respectively);
+it is then required that $\beta\circ\alpha = \gamma$. Moreover, the
+embedding from $s$ to $s$ is required to be identity. These subsort
+embedding compatibility requirements play important role when the
+possibility of combining units is introduced (\ref{casl:archSpec}).
+\begin{BIGEXAMPLE}
+\I\SPEC \NAMEREF{Strict\_Partial\_Order} =
+%%PDM\I{}    \COMMENTENDLINE{Let's start with a simple example !}
+\begin{ITEMS}[\PRED]
+\I\SORT    \( Elem \) 
+\I\PRED    \( \_\_<\_\_ : Elem \* Elem \)
+%           \COMMENTENDLINE{\PRED abbreviates predicate}
+\end{ITEMS}
+\(\[  \FORALL x,y,z : Elem \\
+      \. \NOT(x < x)                      \RIGHT{\LABEL{strict}}     \\
+      \. x < y   \IMPLIES  \NOT(y < x)    \RIGHT{\LABEL{asymmetric}} \\
+      \. x < y \A y < z  \IMPLIES  x < z  \RIGHT{\LABEL{transitive}} \\
+\]\)
+\begin{COMMENT}
+Note that there may exist \(x, y\) such that\\
+neither \(x < y\) nor \(y < x\).
+\end{COMMENT}
+\I\END
+\end{BIGEXAMPLE}
+The specification above declares one sort named $Elem$ and a predicate
+$<$\footnote{Not to be confused with the subsort embedding.}, whose
+intended interpretation is specified with the axioms that 
+follow the declarations. The \nterm{semantics} of a basic specification
+consists of: 
+\begin{itemize}
+\item a \nterm{signature} $\Sigma$ containing the defined symbols and
+\item a \nterm{class of $\Sigma$-models} containing those
+  interpretations of the signature that satisfy the axioms.
+\end{itemize}
+
+
+\subsection{Structured Specifications}
+Structured specifications are formed from basic specifications,
+references to named specifications and instantiations of generic
+specifications using following constructs:
+\begin{itemize}
+\item \nterm{translation} --- renames the symbols defined in a
+  specification;
+\item \nterm{hiding} --- removes symbols from a specification;
+\item \nterm{union} --- composes the specifications identifying common
+  symbols;
+\item \nterm{extension} --- adds further symbols and axioms to a
+  specification;
+\item \nterm{free extension} --- adds further symbols and axioms and
+  restricts the models of resulting specification to free models; if
+  the specification extended is empty, then the models of free
+  extension are just initial models;
+\item \nterm{generic specification} --- defines specification
+  parameters for which arguments have to be provided whenever such
+  specification is referenced.
+\end{itemize}
+\begin{BIGEXAMPLE}
+\I\SPEC \NAMEREF{Generic\_Monoid} [ \SORT $Elem$ ] =
+\begin{ITEMS}[\PRED]
+\I\SORT    \( Monoid \) 
+\I\OPS     $inj : Elem \rightarrow Monoid$\\
+           $1:Monoid$\\
+           $\_\_*\_\_ : Monoid \* Monoid\rightarrow
+Monoid,\,assoc,\,unit\,1$
+\end{ITEMS}
+\(  \FORALL x,y : Elem \. inj(x) = inj(y) \IMPLIES x = y \)
+\I\END
+\end{BIGEXAMPLE}
+\begin{BIGEXAMPLE}
+\I\SPEC \NAMEREF{Generic\_Commutative\_Monoid} [ \SORT $Elem$ ] =
+\I\NAMEREF{Generic\_Monoid} [ \SORT $Elem$ ]
+\I\I\THEN \(  \FORALL x,y : Monoid \. x * y = y * x \)
+\I\END
+\end{BIGEXAMPLE}
+\NAMEREF{Generic\_Monoid} is a generic specification parameterised by
+sort $Elem$. \NAMEREF{Generic\_Commutative\_Monoid} is a (generic)
+extension of \NAMEREF{Generic\_Monoid} that requires the monoid
+operation to be commutative. The semantics of structured
+specifications is of the same kind as that of basic specifications.
+
+
+\subsection{Architectural Specifications}\label{casl:archSpec}
+Whilst structured specification constructs allow one to write
+specifications in modular fashion, they are merely syntactical
+operations and do not impose any structure on models. In order to
+specify the way in 
+which software modules should be constructed and composed during the
+implementation, architectural specifications are introduced.
+\begin{BIGEXAMPLE}
+\I\ARCHSPEC \NAMEDEFN{System\_1} =
+\begin{ITEMS}
+\I\UNITS \[
+  Ord : \NAMEDEFN{Strict\_Partial\_Order};\\
+  Col : \NAMEDEFN{Color};\\
+  Cont : \NAMEDEFN{Elem} \TOTAL \NAMEDEFN{Container[Elem]};
+\]
+\I\RESULT Cont[Ord] \AND Cont[Col \FIT $Elem$ \mapsto \(RGB\)]
+\end{ITEMS}
+\I\END 
+\end{BIGEXAMPLE} 
+Assuming that we have previously defined specifications
+\NAMEDEFN{Strict\_Partial\_Order} (with sort $Elem$), \NAMEDEFN{Color} (with
+sort \(RGB\)) and a generic specification \NAMEDEFN{Container}[\SORT
+  $Elem$] the architecture \NAMEDEFN{System\_1} specified above
+requires its model to have defined:
+\begin{itemize}
+\item a module Ord satisfying (implementing) the specification
+  \NAMEDEFN{Strict\_Partial\_Order}, 
+\item a module Col satisfying the specification \NAMEDEFN{Color},
+\item a parameterised module Cont that, given a module with sort $Elem$,
+  produces a container module for that sort.
+\end{itemize}
+Finally the \RESULT section describes the way those modules are
+composed in order to produce the complete system: container modules for Ord
+and Col are constructed (the Cont parameterised module expects sort
+$Elem$, so a mapping has to be provided saying that \(RGB\) should be
+the sort of data stored in resulting containers) and are amalgamated to
+provide one module with the functionality of both containers. 
+
+The semantics of an architectural specification reflects its
+structure. The component units (modules) may be regarded as unit functions
+(functions without arguments yield self-conained units); the
+entire specification is a collection of those functions together with
+the result of their composition according to the description in
+\RESULT.
+
+The point that requires special attention is handling amalgamation of
+two units into one. The semantics requires that whenever such
+amalgamation takes place the amalgamated units must share common
+components (i.e.~the interpretations of symbols from the intersection of
+their signatures). Moreover, subsort embeddings must also be
+compatible (for instance, implicit embeddings, resulting from
+composition of embeddings from the amalgamated units, must be defined
+unambiguously) in order for the amalgamation to exist. The
+amalgamation 
+conditions should be checked statically, as is the case e.g.~with
+sharing conditions in Standard ML. Amalgamation condition checking will
+be the main problem dealt with in this thesis.
+
+
+\section{\Hets}
+
+
+In order to practically apply \CASL\ specification techniques to
+larger projects, tools supporting \CASL\ are being developed. The {\sl
+  \CASL\ 
+Tool Set} (CATS) developed in Bremen\footnote{See
+  \webaddr{http://www.informatik.uni-bremen.de/cofi/Tools/CATS.html}.}
+using Standard ML supports parsing, static analysis, mixfix analysis,
+encoding for theorem proving tools and \LaTeX\ formatting of \CASL\
+specifications. However, the \CASL\ logic is not always the most
+convenient formalism to specify system modules, sometimes it would be
+better to use a domain-specific logic. Hence a desired feature would
+be support for \nterm{heterogeneous \CASL} --- a superset of \CASL\
+that allows mixing different logics in the specifications. 
+
+CATS has been designed with genericity in mind: static analysis of
+structured specifications has been implemented as a Standard ML
+functor parameterised over static analysis for arbitrary
+logic. Therefore extending the tool set to support new logic boils
+down to providing a tool for analysis of the specifications
+in-the-small (i.e. basic specifications)
+and instantiating the structured specification analysis with that
+tool. However, this approach presents serious limitations when
+heterogeneity is to be achieved: a separate instance of static
+analysis module would have to be created for each logic used in
+specification being analysed and it would not be possible to deal with these
+instances in an uniform way, especially when the number of required
+instances is not known in advance.
+
+Therefore a decision has been made to move to Haskell,
+whose type system is more expressive; type system
+extensions provided by the Glasgow Haskell Compiler (GHC) are particularly
+useful for handling the heterogeneity in an elegant way. Present work
+in Bremen focuses on the \nterm{Heteregeneous Tool Set} (\Hets)\footnote{See
+  \webaddr{http://www.informatik.uni-bremen.de/agbkb/forschung/formal_methods/CoFI/hets/}.} 
+\cite{moss1} --- a set of tools implemented in Haskell that supports
+the analysis of heterogeneous \CASL\ specifications.
+
+\subsection{Heterogeneous Specifications}
+
+In \Hets\ the default logic for analysed library is determined based on the
+input file extension; e.g. \path{.casl} indicates that \CASL\ logic
+should be used by default. It is possible to change the current logic
+within the specification using \texttt{logic {\sl logic\_name}}
+construct, e.g.
+\begin{verbatim}
+logic HasCASL
+\end{verbatim}
+The specifications that follow are then treated as \HasCASL\
+specifications. The example below shows how heterogeneity can be
+exploited to specify a data type using \CASL\ and process that involves
+this data type using \CspCASL. 
+\begin{verbatim}
+library Buffer
+
+logic CASL
+
+spec List =
+  free type List[Elem] ::= nil | cons(Elem; List[Elem])
+end
+
+logic CspCASL
+
+spec Buffer =
+  data List
+  channel read, write : Elem
+  process read   
+  let Buf(l : List[Elem]) =
+              read ? x -> Buf(cons(x, nil))
+              [] if l = nil then STOP 
+                            else write ! last(l) -> Buf(rest(l))
+  in Buf(nil)
+end 
+\end{verbatim}
+
+\subsection{Architecture of \Hets}
+
+\begin{figure}[h]
+\begin{center}
+\vspace{1em}
+\input{hets.tex}
+\caption{Architecture of the Heterogeneous Tool Set \label{fig:hets}}
+\end{center}
+\end{figure} 
+As shown in Figure \ref{fig:hets} processing structured and
+architectural specifications in \Hets\ is independent from processing
+the basic (in-the-small) specifications. In order to integrate new
+logic one has to provide a parser, static checker and a theorem prover
+for the desired logic. Thanks to orthogonal design of \CASL, the
+machinery for structured and architectural specifications is generic
+and can be used with all the implemented logics.
+
+
+
+% ====================================================================
+% STATIC ANALYSIS
+
+\chapter{Static Analysis}\label{staticAnalysis}
+
+\section{Institution Independent Semantics}
+
+\CASL\ is at the heart of a family of languages. Sublanguages might be
+obtained by imposing syntactic or semantic restrictions on the
+original language; the language might as well be extended to support
+various paradigms or applications. \CASL\ design follows the
+principle of orthogonality of subsequent layers (basic,
+structured and architectural specifications and specification
+libraries), hence the sublanguages and superlanguages might be produced
+by restricting/extending the basic specification language only, while
+the other layers remain unchanged. The \nterm{\CASL\ institution}
+defined by the semantics of basic specifications can be replaced by another
+institution for use with the higher-level specifications, particularly
+architectural specifications. This property is reflected by institution
+independent semantics style.
+
+\subsection{Institutions and Amalgamation}\label{institutions}
+
+The formalisation of \CASL\ specification semantics
+relies on the notion of {\sl institution} \cite{gb1}. An institution
+$I$ is a tuple \[(\Sign, \Mod, \Sen, \models)\] where $\Sign$ is a
+category of {\sl signatures}, $\Mod:\Sign^{op}\rightarrow\cat{CAT}$ is
+a {\sl model functor}, $\Sen:\Sign\rightarrow\cat{Set}$ is a functor
+that for a signature $\Sigma$ gives a set of sentences over $\Sigma$
+and $\models$ is a family $\{\models_\Sigma\}_{\Sigma\in|\Sign|}$ of
+relations on $\Mod(\Sigma)\times\Sen(\Sigma)$, subject to so-called
+\nterm{satisfaction condition} (see \cite{gb1}). $\Mod(\Sigma)$ is
+referred to as the category of \nterm{$\Sigma$-models} and for a
+signature morphism $\sigma:\Sigma_1\rightarrow\Sigma_2$,
+$\Mod(\sigma):\Mod(\Sigma_1)\rightarrow\Mod(\Sigma_2)$ is referred to
+as a \nterm{reduct functor}. $\Mod(\sigma)(M)$ is often written as
+$M|_\sigma$. 
+
+If $\Mod$ maps a cocone in $\Sign$ to a limit in $\cat{CAT}$, the
+cocone is said to be \nterm{amalgamable}. If $\Mod$ preserves 
+(finite) limits, i.e. (finite) colimit cocones are amalgamable, the 
+institution $I$ is said to have the \nterm{(finite) amalgamation
+  property}. The $\mathit{SubPCFOL}$ institution (later referred to as
+`the \CASL\ institution') that is the formalisation of the \CASL\
+underlying logic does not have the finite amalgamation property (see
+example in Sect. \ref{staticAnalysis:cellcalc}). 
+
+
+While the semantics of basic specifications is inherently
+institution-specific, the semantics of structured and architectural
+specifications is 
+independent from the underlying institution. In the following sections
+the institution will be referred to implicitly when
+ensuring of amalgamability is required.
+
+
+\subsection{Simple and Extended Static Semantics}\label{semantics_example}
+
+The \CASL\ semantics presented in \cite{refman} is given in two
+steps. First, {\sl static semantics} produces syntactic objects for
+well-formed phrases; then {\sl model semantics} is applied to a
+phrase yielding a class of models of a particular language
+construct. While model semantics gives the ultimate meaning of
+phrases, it's the static semantics that forms the basis for 
+automated static analysis. 
+
+For example, static and model semantics for unit translation
+\begin{center}
+\texttt{UNIT-TRANSLATION ::= unit-translation UNIT-TERM RENAMING}\\
+\end{center}
+is defined as follows\footnote{The semantics presented serves the
+  purpose of demonstration only --- it will later be compared to the
+  extended semantics --- so the exact understanding of all the symbols
+  used is not required. For their definitions please refer to
+  \cite{refman}.}: 
+\paragraph{Static semantics}
+\[
+\inference{
+  \Gamma_s,C_s\vdash\texttt{UNIT-TERM}\triangleright\Sigma\\
+  \Sigma\vdash\texttt{RENAMING}\triangleright\sigma:\Sigma\rightarrow\Sigma'
+}{
+  \Gamma_s,C_s\vdash\texttt{unit-translation UNIT-TERM RENAMING}\triangleright\Sigma'
+}
+\]
+\paragraph{Model semantics}
+\[
+\inference{
+  \Gamma_s,C_s\vdash\texttt{UNIT-TERM}\triangleright\Sigma\\
+  \Gamma_s,\Gamma_m,C_s,C\vdash\texttt{UNIT-TERM}\Rightarrow MEv\\
+  \Sigma\vdash\texttt{RENAMING}\triangleright\sigma:\Sigma\rightarrow\Sigma'\\
+  \textrm{for all } E\in C\textrm{, there exists a unique } M'\in
+  \Mod(\Sigma') \textrm{ with } M'|_\sigma = MEv(E)
+}{
+  \Gamma_s,\Gamma_m,C_s,C\vdash\texttt{unit-translation UNIT-TERM
+    RENAMING}\Rightarrow \mathit{Mapping}}
+\]
+where $\mathit{Mapping} = \{E\mapsto M' | E\in C, M'\in
+\Mod(\Sigma'),M'|_\sigma = MEv(E)\}$
+
+It should be noted that the static semantics given above does not discharge
+some conditions one would expect to be able to check statically. For
+instance the requirement that unique model exists boils down to
+ensuring model amalgamability, which is a static condition\footnote{If
+  defined as in Sect. \ref{institutions}.}, since the
+classes of models considered are restricted only by signatures and
+signature morphisms. However, information about the dependencies
+between units needs to be preserved in order to perform a more in-depth
+analysis.  
+
+Sharing information is represented as a signature diagram --- a
+dag (directed acyclic graph) whose nodes are labelled with signatures
+and edges are labelled with signature morphisms indicating how the
+source unit components are incorporated into the target unit. For a
+sample architectural specification 
+\begin{EXAMPLE}
+\I\ARCHSPEC \NAMEDEFN{Arch\_Spec\_1} =
+\begin{ITEMS}
+\I\UNITS \[
+  U : \NAMEDEFN{Spec\_1};\\
+  F : \NAMEDEFN{Spec\_1} \TOTAL \NAMEDEFN{Spec\_2};\\
+  G : \NAMEDEFN{Spec\_1} \TOTAL \NAMEDEFN{Spec\_3};
+\]
+\I\RESULT F[U] \AND G[U]
+\end{ITEMS}
+\I\END 
+\end{EXAMPLE} 
+the signature diagram is shown in Figure \ref{fig:diag1}. Please note
+that while actual diagram contains signatures and signature morphisms,
+the diagram in the figure is labelled with unit terms to indicate
+where the signatures and morphisms come from.
+\begin{figure}[h]
+\vspace{1em}
+$$\bfig
+\square(-600,
+0)|alrb|<600, 600>[\NAMEDEFN{Spec\_1}`U`\NAMEDEFN{Spec\_2}`F[U{]};`F``]
+\square(0,
+600)|alrb|<600, 600>[\NAMEDEFN{Spec\_1}`\NAMEDEFN{Spec\_3}`U`G[U{]};G```]
+\square|alrb|<600, 600>[U`G[U{]}`F[U{]}`F[U{]}\,\AND\,G[U{]};```]
+\efig$$
+\caption{The signature diagram for \textsc{Arch\_Spec\_1} \label{fig:diag1}}
+\end{figure} 
+F and G are represented as morphisms from \NAMEDEFN{Spec\_1} to
+\NAMEDEFN{Spec\_2} and from \NAMEDEFN{Spec\_1} to \NAMEDEFN{Spec\_3}
+respectively. They are instantiatied with U producing F[U] and
+G[U]. Finally the amalgamation F[U] \AND G[U] is represented by the
+bottom-right node. 
+
+The \nterm{extended static semantics} uses diagram nodes instead of
+plain signatures and uses the information about dependencies between
+units stored in the diagram to check amalgamability conditions (see
+Sect. \ref{sinks} for a formal definition of `ensuring
+  amalgamability'). Interpreting diagram $D$ as a functor from its 
+\nterm{shape category} $\cat{I}$ to the category $\Sign$ of signatures
+the extended static semantics and corresponding model semantics for
+unit translation can be written as
+\paragraph{Static semantics (extended)}
+\[
+\inference{
+  \Gamma_s,C_s\vdash\texttt{UNIT-TERM}\triangleright(p, D)\\
+  D(p)\vdash\texttt{RENAMING}\triangleright\sigma:D(p)\rightarrow\Sigma'\\
+  D \textrm{ ensures amalgamability along }
+  (\Sigma',\langle\sigma:D(p)\rightarrow\Sigma'\rangle)\\
+  D' \textrm{ extends } D \textrm{ by new node } q \textrm{ and edge }
+  e:p\rightarrow q \textrm{ with } D'(e) = \sigma
+}{
+  \Gamma_s,C_s\vdash\texttt{unit-translation UNIT-TERM
+    RENAMING}\triangleright(q, D')
+}
+\]
+\paragraph{Model semantics}
+\[
+\inference{
+  \Gamma_s,C_s\vdash\texttt{UNIT-TERM}\triangleright\Sigma\\
+  \Gamma_s,\Gamma_m,C_s,C\vdash\texttt{UNIT-TERM}\Rightarrow MEv\\
+  \Sigma\vdash\texttt{RENAMING}\triangleright\sigma:\Sigma\rightarrow\Sigma'
+  %\strikethrough{\textrm{for all } E\in C\textrm{, there exists a unique } M'\in
+  %\Mod(\Sigma') \textrm{ with } M'|_\sigma = MEv(E)}
+}{
+  \Gamma_s,\Gamma_m,C_s,C\vdash\texttt{unit-translation UNIT-TERM
+    RENAMING}\Rightarrow \mathit{Mapping}}
+\]
+The extended static semantics is much more useful as far as
+tools and applications are concerned, as it is able to check a bigger
+class of specifications without resorting to theorem proving.
+
+
+\section{Amalgamability Analysis for \CASL}\label{staticAnalysis:amalg}
+
+The example presented in the previous section shows that the extended
+static semantics, being insititution-independent, simply states the
+requirement that the diagram must ensure amalgamability. This is a
+property dependent on the particular institution and appropriate machinery
+discharging this condition has to be provided for the logic used.
+
+In this section the case of \CASL\ institution will be analysed and
+a method of checking whether amalgamability is ensured for
+given diagram and a set of morphisms extending it will be
+presented. The notation introduced in the following paragraphs will
+also be used in Chapter \ref{impl} in the description of the implemented
+algorithms. 
+
+
+\subsection{Signature Diagrams and Sinks}\label{sinks}
+
+Let's denote the set of all the nodes in signature diagram $D$ by
+$\NodesD$ and the set of all the edges in $D$ by $\EdgesD$. We
+say that a family of models $\langle M_p\rangle_{p\in \NodesD}$ is
+\nterm{consistent with $D$} if
+\begin{itemize}
+\item for each $p\in \NodesD$ $M_p\in\Mod(D(p))$ and
+\item for each $e:p\rightarrow q\in \EdgesD$ we have $M_p=M_q|_{D(e)}$  ---
+  where $D(e)$ is the signature morphism with which 
+  edge $e$ is labelled.
+\end{itemize}
+Consider diagram $D$ where some nodes $p_1,p_2,...,p_k$ labelled
+with signatures $\Sigma_1,\Sigma_2,...,\Sigma_k$ ($D(p_i) = \Sigma_i$
+for $i\in\{1,2,...,k\}$) are to be amalgamated. Let $\Delta$ stand for
+the signature of the amalgamation and
+$\tau_i:\Sigma_i\rightarrow\Delta$ denote respective signature
+morphisms. A \nterm{sink} $\tau$ is a
+pair consisting of the target signature $\Delta$ together with this
+family of morphisms: 
+$(\Delta, \{\tau_1,\tau_2,...,\tau_k\})$. We say that \nterm{$D$ ensures
+amalgamability for $\tau$} if for every family of models $\langle
+M_q\rangle_{q\in \NodesD$ consistent with $D$ there exists a unique
+  model $M\in\Mod(\Delta)$ such that for all $i\in\{1,2,...,k\}$
+  $M|_{\tau_i}=M_{p_i}$. 
+
+The analysis of this condition is discussed in Sect.
+\ref{sharing} -- \ref{checking_cell} and the implementation of
+algorithms that realise this analysis are presented in Chapter
+\ref{impl}. The notation introduced above is used throughout the rest
+of this thesis.
+
+
+\subsection{Sharing Analysis}\label{sharing}
+
+One obvious condition that must be met for the amalgamation to exist
+is that all the symbols (of sorts, operations or predicates) of the
+component units that are identified in 
+the the signature of the amalgamation must share the same
+interpretation. This condition is easily decidable through the
+analysis of the signature diagram.  
+
+Let $Symbs(D)$ denote the disjoint union 
+of all the symbols\footnote{In case of operation and
+  predicate symbols we consider the names together with their
+  profiles; e.g. two operations named $f$ but having different profiles are
+  regarded as different symbols.} 
+from $\Sigma_1,\Sigma_2,...,\Sigma_k$, that is a
+set of pairs $(p_i, s)$ where $s$ is one of the symbols of
+$\Sigma_i$. Let \nterm{morphism path} $\morphpath{\sigma}$ be a
+sequence of signature morphisms $\sigma_1,\sigma_2,...,\sigma_m$
+determined by a path $\morphpath{e}=e_1,e_2,...,e_m$ in $D$ where
+$\sigma_i = 
+D(e_i)$. Note that $cod(\sigma_i)=dom(\sigma_{i+1})$ for
+$i\in\{1,2...,m-1\}$. We write $dom\morphpath{\sigma}$ to denote the
+domain of the first morphism in the sequence and
+$cod\morphpath{\sigma}$ to denote the codomain of the last morphism in
+$\morphpath{\sigma}$. We also say that $\morphpath{\sigma}$ maps
+a symbol $s$ from $dom\morphpath{\sigma}$ to symbol $t$ from
+$cod\morphpath{\sigma}$ if the composition of morphisms in
+$\morphpath{\sigma}$ maps $s$ to $t$. 
+Let's define two equivalence relations on
+$Symbs(D)$, $\simeq$ and $\simeq_\tau$, in the following way: 
+\begin{itemize}
+\item $\simeq$ is the least equivalence satisfying the following
+  condition:
+  $(p, s)\simeq (q, t)$ if there exists a node $r$ and two 
+  paths in the diagram: $\morphpath{e}$ from $r$ to $p$ and
+  $\morphpath{f}$ from $r$ to $q$ such that signature
+  morphism path $\morphpath{\sigma}$ determined by $\morphpath{e}$
+  maps symbol $u$ from $D(r)$ to $s$ from $D(p)$ and morphism path
+  $\morphpath{\mu}$ determined by $\morphpath{f}$ maps the same $u$ to
+  $t$ from $D(q)$. 
+  Informally, this rule states that $s$ and $t$ have a common origin,
+  thus denote essentially the same thing. The rule obviously is
+  reflexive and symmetrical, so $\simeq$ is just the transitive closure of
+  the relation given by this rule.
+\item $(p_i, s)\simeq_\tau (p_j, t)$ iff $\tau_i$ maps $s$ to a symbol
+  $u$ in $\Delta$ and $\tau_j$ maps $t$ to the same $u$. Informally,
+  $(p_i, s)\simeq_\tau (p_j, t)$ means that $s$ and $t$ are identified in the
+  amalgamation. 
+\end{itemize}
+We may now formulate a condition regarding sharing, which is a
+necessary prerequisite for amalgamation:
+\begin{stdth}\label{th:sharing}
+If the condition
+\[(*) \simeq_\tau\,\subseteq\,\simeq\]
+holds then all the symbols that are identified in the amalgamation have common
+interpretations in models from model families consistent with $D$.
+\end{stdth}
+\proof
+Assume that the sharing condition $(*)$ holds. From the definition of
+$\simeq_\tau$ it follows that for each pair of identified diagram symbols
+$s,t$ from nodes $p_i,p_j$ we have $(p_i, s)\simeq_\tau (p_j,
+t)$. Because of $(*)$ we also have $(p_i, s)\simeq (p_j, t)$. 
+There are two possible ways in which these diagram symbols got to be
+in the $\simeq$ relation: 
+\begin{enumerate}
+\item either $s$ and $t$ have common origin --- in this case the
+  theorem holds trivially, since the origin determines the
+  interpretation of both $s$ and $t$,
+\item or $s$ and $t$ are equivalent w.r.t. $\simeq$ due to
+  transitive closure of the rule that defines $\simeq$ --- this is
+  illustrated in Figure \ref{fig:transSimeq}.
+\begin{figure}[h]
+\vspace{1em}
+$$\bfig
+\[
+\xymatrix{ 
+  p_i & & q_1 & & q_2 & ... & q_{m-1} & & q_m & & p_j \\
+  & \bullet \ar@{~>}[lu] \ar@{~>}[ru] & & \bullet \ar@{~>}[lu]
+  \ar@{~>}[ru] & & & & \bullet \ar@{~>}[lu] \ar@{~>}[ru] & & \bullet
+  \ar@{~>}[lu] \ar@{~>}[ru] &  
+}
+\]
+\efig$$
+\caption{Transitive closure case in Theorem
+  \ref{th:sharing}\label{fig:transSimeq}} 
+\end{figure} 
+Here symbol $s$ from $D(p_i)$ has common origin with some symbol $u_1$
+from $D(q_1)$, $u_1$ has common origin with some $u_2$ from
+$D(q_2)$ etc.; finally $u_m$ from $D(q_m)$ and $t$ have
+common origin. It follows by induction that $s$, all the $u_i$'s 
+and finally $t$ must share common interpretation. 
+\end{enumerate}
+\QED
+
+\subsection{Cell Calculus}\label{staticAnalysis:cellcalc}
+
+With \CASL\ institution the aspect that turns out to be most complex
+and ultimately makes the amalgamability analysis undecidable
+is the presence of sort embeddings. Consider following architectural
+specification \cite{khtsm1}: 
+\begin{EXAMPLE}
+\I\SPEC \NAMEDEFN{Num\_1} = \SORTS $Number$, $List[Digit]$, $List[Number]$
+\I\SPEC \NAMEDEFN{Num\_2} = \SORTS $Number < List[Digit]$,
+$List[Number]$
+\I\SPEC \NAMEDEFN{Num\_3} = \SORTS $Number < List[Number]$,
+$List[Digit] < List[Number]$
+\\
+\I\ARCHSPEC \NAMEDEFN{Arch\_Spec\_1} =
+\begin{ITEMS}
+\I\UNITS \[
+  U : \NAMEDEFN{Num\_1};\\
+  F : \NAMEDEFN{Num\_1} \TOTAL \NAMEDEFN{Num\_2};\\
+  G : \NAMEDEFN{Num\_1} \TOTAL \NAMEDEFN{Num\_3};
+\]
+\I\RESULT F[U] \AND G[U]
+\end{ITEMS}
+\I\END 
+\end{EXAMPLE} 
+\begin{figure}[h]
+\vspace{1em}
+$$\bfig
+\morphism(-1000,600)//[F[U{]}`;]
+\Vtriangle(-1400,0)|alr|/`>`/<350,
+350>[Number`List[Number{]}`List[Digit{]};\gamma`\alpha`\beta]
+\morphism(-250,-100)/-/<0, 800>[`;]
+\morphism(350,600)//[G[U{]}`;]
+\Vtriangle(0,0)|alr|/>``<-/<350,
+350>[Number`List[Number{]}`List[Digit{]};\gamma`\alpha`\beta]
+\morphism(1150,-100)/-/<0, 800>[`;]
+\morphism(1750,600)//[F[U{]}\,\AND\,G[U{]}`;]
+\Vtriangle(1400,0)|alr|/>`>`<-/<350,
+350>[Number`List[Number{]}`List[Digit{]};\gamma`\alpha`\beta]
+\morphism(-1600, 500)/-/<4000,0>[`;]
+\efig$$
+\caption{The sort embeddings in F[U], G[U] and F[U] \AND G[U] \label{fig:embs1}}
+\end{figure} 
+Here the sharing condition for sorts is satisfied, since all the sorts
+come from the unit U. However, sort embeddings $\alpha$ in F[U] and
+$\beta$, $\gamma$ in G[U] are defined independently, so there is no
+guarantee that in the amalgamation the embeddings $\beta\circ\alpha$
+and $\gamma$ will commute (see Figure \ref{fig:embs1}). Indeed, under expected
+implementation\footnote{$n : Number$ is treated as a list of digits and
+  as a one-element long list of numbers,
+  $ld : List[Digit]$ is regarded as a list of numbers of the same
+  length as $ld$ where each number is one-digit long.} these
+injections do not commute. This relates to the lack of amalgamation
+property in the \CASL\ institution: the pushout of the signature
+diagram (i.e. the union of
+F[U] and G[U] signatures) is not mapped by $\Mod$ to a pullback in
+$\cat{CAT}$. 
+
+It seems that similar sharing condition to that specified above
+for signature objects has to be checked: it must be ensured that the
+amalgamation does not assume equality between more embeddings than 
+can be deduced from the diagram. However, as the example above shows,
+not only individual embeddings declared explicitly would have to be
+analysed, but also their compositions (\nterm{embedding paths}). That
+leads to undecidability, since there might exist embedding loops that
+generate infinite number of possible paths\footnote{Infinite number of
+paths doesn't necessarily mean the problem presented is
+undecidable. However, the rules of cell calculus directly correspond
+to the axioms of monoids with left cancellation and the (undecidable) problem of
+deciding whether such a monoid defined by a finite set of equations is
+trivial can be reduced to the cell condition presented below (see \cite{khtsm1}).}.
+
+Finiteness aside, the problem might be formalised in a fashion similar
+to the sharing condition, bearing in mind that the rules according to
+which two 
+embedding paths are considered to be equivalent are somewhat more
+complex than in case of $\simeq$ and $\simeq_\tau$ relations. 
+An \nterm{embedding path} in diagram $D$ is a sequence of
+embeddings $\alpha_1, \alpha_2,...\alpha_m$ such that the domains and
+codomains of consecutive embeddings are equivalent w.r.t. supplied
+$\simeq$ relation (on the disjoint union of sort symbols from $D$). We
+define a \nterm{cell} to be a pair of embedding paths with equivalent
+beginning sorts and equivalent ending sorts; the
+paths in the cell are considered to be equivalent. We will need
+to show that the set of cells generated by the diagram is a superset
+of the set of cells induced by the amalgamation. 
+
+The considerations that follow assume that the only symbols in
+the signatures are sort symbols; operations and predicates are
+irrelevant for sort embedding analysis and would only clutter up the
+notation. 
+First, consider the simple extension of $\simeq$ to all the sorts in
+the diagram: the least equivalence on the disjoint union of the sort
+symbols in $D$ such that for all
+diagram edges $e : p\rightarrow q$ and sort $s$ in $D(p)$, $(p,
+s)\simeq(q, D(e)(s))$. Let $\msym{Embs}(D)$ be the disjoint union of all the sort
+embeddings defined in the signatures in $D$, i.e. a set of pairs $(p,
+\alpha)$ where $\alpha$ is an embedding in $D(p)$. The embedding 
+paths mentioned above are formally defined as finite words over
+$\msym{Embs}(D)$ in form $\seq{(p_n, \alpha_n),...,(p_1, \alpha_1)}$ such that for
+$1\leq i < n$ $(p_i, cod(\alpha_i))\simeq(p_{i+1},
+dom(\alpha_{i+1}))$. Let's denote the set of all such
+words by $Adm_\simeq$\footnote{$Adm_\simeq$ stands for
+  \nterm{$\simeq$-admissible}; the words are constructed based on the
+  $\simeq$ relation.}. Note that the first morphism in a path (in the
+diagrammatic order) is the rightmost letter in the word. For a 
+word $\omega = \seq{(p_n, \alpha_n),...,(p_1, \alpha_1)}$ we write
+$dom(\omega)$ for $(p_1, dom(\alpha_1))$ and $cod(\omega)$ for $(p_n,
+cod(\alpha_n))$. Now, a \nterm{cell over $D$} may be defined as a pair
+$(\omega,\upsilon)$ of words from $Adm_\simeq$ such that $dom(\omega)\simeq
+dom(\upsilon)$ and $cod(\omega)\simeq cod(\upsilon)$.
+
+Let $\cong$ be the least relation on $Adm_\simeq$ satisfying
+following rules:
+\begin{eqnarray}
+\nonumber
+\inference[\rulename{Refl}]{\omega\in Adm_\simeq}{\omega\cong\omega}
+&
+\inference[\rulename{Symm}]{\omega\cong\upsilon}{\upsilon\cong\omega}
+&
+\inference[\rulename{Trans}]{\omega\cong\upsilon &
+  \upsilon\cong\psi}{\omega\cong\psi}
+\end{eqnarray}
+\begin{eqnarray}
+\nonumber
+\inference[\rulename{Diag}]{l : p\rightarrow q\,\text{is an edge in}\,
+  D}{\seq{(p, e)}\cong\seq{(q, D(l)(e))}}
+&
+\inference[\rulename{Comp}]{ed\,\text{is defined in}\,D(p)}{\seq{(p,
+    e), (p, d)}\cong\seq{(p, ed)}} 
+\end{eqnarray}
+\begin{eqnarray}
+\nonumber
+\inference[\rulename{Cong}]{\omega\cong\upsilon & \psi\cong\phi &
+  cod(\omega)\simeq dom(\psi)}{\psi\omega\cong\phi\upsilon}
+&
+\inference[\rulename{Lc}]{\psi\omega\cong\psi\upsilon}{\omega\cong\upsilon}
+\end{eqnarray}
+Obviously (due to \rulename{Refl}, \rulename{Symm} and
+\rulename{Trans} rules) $\cong$ is an equivalence relation.
+$\cong$ can be thought of as a set of cells over $D$, the seven rules used
+to inductively define this set are therefore called the \nterm{cell
+  calculus}. 
+
+In this way we have defined the relation that represents
+the expected equivalences between embedding paths. What still needs to be
+done is to represent the paths that are considered equivalent in the
+amalgamation, that is paths that have equivalent beginnings and
+ends in the amalgamation. Let $Adm_{\simeq_\tau}$ be the set of all
+the words defined in the same manner as $Adm_\simeq$ but where the
+domains and codomains of consecutive morphisms are equivalent
+w.r.t. $\simeq_\tau$ (and so $Adm_{\simeq_\tau}$ are words of
+embeddings in signatures $\Sigma_1,\Sigma_2,...,\Sigma_k$). We may now define
+$\cong_\tau$ to be the least 
+equivalence on $Adm_{\simeq_\tau}$ where for $\omega,\upsilon\in
+Adm_{\simeq_\tau}$ if $dom(\omega)\simeq_\tau dom(\upsilon)$ and
+$cod(\omega)\simeq_\tau cod(\upsilon)$ then
+$\omega\cong_\tau\upsilon$. The relation $\cong_\tau$ represents
+embedding paths that are identified in the amalgamation. Note that if
+the sharing condition $(*)$ holds then $Adm_{\simeq_\tau}\subseteq
+Adm_\simeq$. 
+\begin{stdth}\label{th:amalg}
+In the above setting, if both the sharing condition $(*)$ and the \nterm{cell condition}:
+\[(**) \cong_\tau\,\subseteq\,\cong\] 
+hold then $D$ ensures amalgamability for $\tau$.
+\end{stdth}
+\proof
+See the extended version of \cite{khtsm1}.
+\QED
+
+\subsection{Optimisations}\label{impl:amalg:opt}
+
+The rules of cell calculus presented in
+Sect. \ref{staticAnalysis:cellcalc} capture the formal aspect of
+amalgamability analysis; however, using them naively is inefficient as far as
+the implementation is concerned. In particular, the rules of extended static
+semantics often generate a number of diagram nodes with similar
+signatures and, as a consequence, the $\simeq$ relation has large
+equivalence classes. This leads to large $Adm_\simeq$ set, since
+embeddings with equivalent domains and codomains are equivalent
+and all combinations of equivalent embeddings need to be used in
+order to obtain the set of all $\simeq$-admissible words. Large
+$Adm_\simeq$ coupled with expensive algorithm for computing $\cong$
+relation results in long execution time.
+
+A way to remedy this is to observe that \rulename{Diag} rule of cell
+calculus corresponds to a trivial equivalence of embeddings. We may
+therefore compute an equivalence $\sim$ on $\msym{Embs}(D)$ defined
+by this rule and factor $\msym{Embs}(D)$ through $\sim$. Let
+$\msym{CanonicalEmbs}(D)$ denote the set $\msym{Embs}(D)/\sim$. For
+checking the cell condition it is now sufficient to consider the set
+of $\simeq$-admissible words over $\msym{CanonicalEmbs}(D)$. The
+argument is that any equivalence proof $\omega\cong\upsilon$ in the
+cell calculus can be normalised to a proof
+$\omega\cong\phi\cong\psi\cong\upsilon$, where $\phi$ and $\psi$ are
+$\simeq$-admissible words over
+$\msym{CanonicalEmbs}(D)$. $\phi\cong\psi$ is proved using words over
+$\msym{CanonicalEmbs}(D)$ only. However, this proof requires a
+slightly different set of rules; instead of \rulename{Comp} and
+\rulename{Diag} rules we use a combination of these:
+\begin{eqnarray}
+\nonumber
+\inference[\rulename{CompDiag}]{(p,e)\sim(p,e') & (q,d)\sim(n,d') &
+  (m,f)\sim(n,e'd')}{\seq{(p,e), (q,d)}\cong\seq{(m,f)}}
+\end{eqnarray}
+Now the equivalences $\omega\cong\phi$ and $\psi\cong\upsilon$ are
+proved through obvious applications of \rulename{Diag} and \rulename{Cong}
+rules only. 
+A further refinement is to close the $\sim$ relation w.r.t. congruence
+rule for single embeddings, namely:
+\begin{eqnarray}
+\nonumber
+\inference[\rulename{Cong1}]{(p,e)\sim(q,e') & (p,d)\sim(q,d') &
+  (p,ed) \text{ and } (q,e'd') \text{ are in the domain of }
+  \sim}{(p,ed)\sim(q,e'd')}
+\end{eqnarray}
+This reduces the set $\msym{CanonicalEmbs}(D)$ even more, while the
+argument above remains valid.
+
+The implementation described in Chapter \ref{impl} uses this
+optimisation, i.e. $\cong$ is computed over  
+$\msym{CanonicalEmbs}(D)$ and $\cong_\tau$ is translated to
+$\msym{CanonicalEmbs}(D)$. 
+
+
+\subsection{Checking the Cell Condition}\label{checking_cell}
+
+The domains of $\cong$ and $\cong_\tau$ may be infinite and
+while we could find a finite subrelation $\cong_\tau'$ of $\cong_\tau$
+such that if $\cong_\tau'\,\subseteq\,\cong$ then
+$\cong_\tau\,\subseteq\,\cong$, 
+(it is sufficient to consider loopless words in the domain of
+$\cong_\tau$\footnote{Note that the identity embeddings are essentially
+  trivial w.r.t. $\cong$ and $\cong_\tau$, we can therefore ommit them in
+  further considerations.}) in general it is not possible to finitely represent
+$\cong$.
+
+Anyway, attempts have been made in \cite{khtsm1} to distinguish
+special cases where the cell condition can be effectively
+analysed.
+\begin{enumerate}
+\item When the set $Adm_\simeq$ is finite (i.e. embeddings do not form
+  non-trivial cycles) the relation $\cong$ is finite. Computing $\cong$ is
+  PSPACE-hard, however, an observation that if the inclusion
+  $\simeq_\tau\,\subseteq\,\simeq$ holds and the colimit of $D$ (as a
+  diagram in the category of left cancellable small
+  categories\footnote{We take the category $\cat{lcCat}$ of left 
+  cancellable small categories to be the category of signatures (we
+  interpret preorders as thin categories), hence
+  the diagram is a fuctor $D:\cat{I}\rightarrow\cat{lcCat}$.}) is a
+  thin category
+  than the cell condition is satisfied leads to a polynomial time
+  algorithm.  
+\item Consider a subrelation $\cong_0$ of $\cong$ that is the least
+  equivalence satisfying all the rules of cell calculus except for
+  \rulename{Cong} and \rulename{Lc}. Obviously
+  $\cong_\tau\,\subseteq\,\cong_0$ implies the cell
+  condition. Although $\cong_0$ has possibly infinite domain it has only
+  finitely many non-reflexive elements and can therefore be finitely
+  represented. 
+\item Let $\cong^R$ denote the relation $\cong$ restricted to loopless
+  words. The domain of $\cong^R$ is finite, thus the relation itself
+  is finite, so it is possible to devise a (PSPACE-hard) algorithm
+  that checks the inclusion $\cong_\tau\,\subseteq\,\cong^R$.
+\end{enumerate}
+These observations form the basis for an algorithm that is able to
+verify the cell condition for most of practically useful cases of 
+architectural specifications. The least trivial part of the
+implementation presented in the next chapter is entirely based on
+these results. 
+
+
+
+% ====================================================================
+% IMPLEMENTATION
+
+\chapter{The Implementation}\label{impl}
+
+\section{Module Overview}
+
+The source code of \Hets\ is split into Haskell modules. The hierarchy
+of modules is reflected by the hierarchy of directories in which the
+source files are stored, i.e. the module \module{Static.ArchDiagram}
+corresponds to the file \path{Static/ArchDiagram.hs} in the \Hets\
+source code directory.
+
+The modules that form the foundations of \Hets\ are:
+\begin{itemize}
+\item \module{Logic.*} --- provide data structures for logics and
+  logic comorphisms and define Grothendieck logic --- a heterogeneous
+  logic over which the data structures and algorithms for
+  specifications in-the-large are built.
+\item \module{Comorphisms.*} --- define comorphisms between different
+  logics implemented in \Hets\ and assemble all these logics into the
+  \nterm{logic graph}.
+\item \module{Syntax.*} --- define the abstract syntax and parsers for
+  \CASL\ structured and architectural specifications and specification
+  libraries.
+\item \module{Static.*} --- contain the static analysis algorithms for
+  specifictaions in-the-large.
+\end{itemize}
+
+In addtition there are logic-specific modules in \module{CASL.*},
+\module{HasCASL.*}, \module{CspCASL.*} etc.; a separate directory is
+provided for each logic supported by \Hets. A library of common data
+structures (maps, graphs etc.) is provided by modules in
+\module{Common.Lib.*}. 
+
+The modules implemented as a part of this thesis are:
+\begin{itemize}
+\item \module{Syntax.Parse\_AS\_Architecture} --- parsing of
+  architectural specifications,
+\item \module{Static.ArchDiagram} --- definition of signature diagrams,
+\item \module{Static.AnalysisArchitecture} --- institution independent
+static analysis of architectural specifications,
+\item \module{CASL.Amalgamability} --- amalgamability analysis for
+  \CASL\ institution.
+\end{itemize}
+
+
+\section{Parsing}
+
+Parsing in \Hets\ is done using \nterm{monadic parser combinator}
+\cite{hm1} library Parsec\footnote{See
+  \webaddr{http://www.cs.uu.nl/~daan/parsec.html}.}. The abstract
+syntax elements for architectural specifications are defined in
+\module{Syntax.AS\_Architecture}. Functions building the \nterm{abstract
+syntax tree} (AST) are defined in
+\module{Syntax.Parse\_AS\_Architecture}. They follow the
+abstract syntax defined in \cite{refman}; the grammar has only been
+slightly adjusted to eliminate left-hand-side recursion and
+disambiguate some constructs. There's one function for each
+non-terminal symbol of the grammar.
+\begin{verbatim}
+-- | Parse group unit term
+-- @
+-- GROUP-UNIT-TERM ::= UNIT-NAME
+--                   | UNIT-NAME FIT-ARG-UNITS
+--                   | { UNIT-TERM }
+-- @
+groupUnitTerm :: (AnyLogic, LogicGraph) -> AParser UNIT_TERM
+groupUnitTerm l =
+        -- unit name/application
+    do name <- simpleId
+       (args, pos) <- fitArgUnits l
+       return (Syntax.AS_Architecture.Unit_appl name args pos)
+    <|> -- unit term in brackets
+    do lbr <- asKey "{"
+       ut <- unitTerm l
+       rbr <- asKey "}"
+       return (Syntax.AS_Architecture.Group_unit_term ut 
+                                 (map tokPos [lbr, rbr]))
+\end{verbatim}
+The function presented above parses a group unit term. The
+{\tt<|>} symbol is a Parsec alternative that separates
+productions. The first two productions are captured in the first part
+of the alternative --- \sym{fitArgUnits} may return an empty list
+and hence yield unit name. The code indeed looks very similar to the
+context-free grammar. 
+
+Special care needs to be taken when parsing unit specifications:
+\begin{verbatim}
+UNIT-SPEC ::= SPEC-NAME 
+            | UNIT-ARGS GROUP-SPEC 
+            | arch spec GROUP-ARCH-SPEC 
+            | closed UNIT-SPEC
+\end{verbatim}
+The first two cases are indistinguishable at the parsing stage, since
+{\tt UNIT-ARGS} might be empty and {\tt GROUP-SPEC} might reduce
+to {\tt SPEC-NAME}. Therefore in either of these cases the
+\sym{unitSpec} function parses a unit type 
+(i.e. tries the second production). At the static analysis stage the
+correct production is regonised depending on the context and
+appropriate correction to the AST is made.
+
+
+\section{Static Analysis}
+
+The (institution independent) static analysis of architectural
+specifications is based on the extended static semantics defined in
+\cite{refman} (see Sect. \ref{semantics_example}). 
+
+\subsection{Data Structures}
+Data structures used in the analysis are defined in
+\module{Static.ArchDiagram}. The \nterm{development graphs} defined in
+\module{Static.DevGraph} are used as well. Both development graphs and
+signature diagrams are represented using \sym{Graph} data
+type defined in \module{Common.Lib.Graph}.
+
+The \sym{DGraph} type defined in \module{Static.DevGraph} is a graph whose
+nodes are labelled with signatures and edges are labelled with
+signature morphisms. It represents the dependencies between structured
+specifications: the leaves represent basic specifications and the inner
+nodes are structured specifications constructed from other
+specifications. The development graph also contains \nterm{theorem
+  links} --- edges to which proof obligations are attached.
+The \sym{NodeSig} type is a representation of signature that takes into
+account the development graph. \sym{NodeSig} contains both a node in
+development graph and a signature with which that node is labelled.
+The operations on \sym{DGraph} defined in \module{Static.DevGraph} are:
+\begin{itemize}
+\item \sym{extendDGraph} --- extends given \sym{DGraph} with given morphism
+  originating from given node.
+\item \sym{extendDGraphRev} --- extends given \sym{DGraph} with given morphism
+  whose codomain is in given node.
+\item \sym{nodeSigUnion} --- extends given \sym{DGraph} with a node
+  representing union of signatures from given set of nodes.
+\end{itemize}
+
+The \sym{Diag} type defined in \module{Static.ArchDiagram} is a graph
+whose nodes are labelled with \sym{NodeSigs} and edges are labelled with
+signature morphisms. The signature stored in a node is the signature
+of the unit that node represents.
+The operations on \sym{Diag} defined in \module{Static.ArchDiagram} are:
+\begin{itemize}
+\item \sym{extendDiagram} --- extends given \sym{Diag} with a node
+  containing given \sym{NodeSig} and an edge from given node to the
+  new node. The edge is labelled with supplied signature morphism.
+\item \sym{extendDiagramIncl} --- extends given \sym{Diag} with a node containing
+  given \sym{NodeSig} and a set of edges from given set of nodes to the
+  new node. The edges are labelled with signature inclusions. 
+\item \sym{extendDiagramWithMorphism} --- extends given \sym{Diag} with an
+  edge from given node and a new node that is the target of the edge
+  added. The edge is labelled with given signature morphism and the
+  new node contains the codomain of this morphism.
+\item \sym{extendDiagramWithMorphismRev} --- similar to
+  \sym{extendDiagramWithMorphism}, but the new node is at the begginning
+  of the new edge and contains the domain of the morphism.
+\item \sym{homogeniseDiagram} --- tries to coerce the logics of all the
+  signatures and morphisms in given \sym{Diag} to given logic using
+  coertion function \sym{rcoerce} from \module{Logic.Logic}.
+\item \sym{homogeniseSink} --- tries to coerce the logics of all the
+  morphisms in given list of signature morphisms to given
+  logic using \sym{rcoerce} function from \module{Logic.Logic}. 
+\end{itemize}
+
+
+\subsection{Functions}
+Functions that perform the analysis are defined in 
+\module{Static.AnalysisArchitecture}. There is essentially one
+function for each semantic rule. The only exported functions are
+\sym{ana\_ARCH\_SPEC} and \sym{ana\_UNIT\_SPEC}; given logic graph, global
+context (containing current development graph), current logic and
+appropriate fragment of the abstract syntax tree these functions return
+architectural/unit signature, modified development graph and modified
+AST fragment. 
+
+The checking of amalgamability condition is realised by
+\sym{assertAmalgamability} and \\\sym{homogeneousEnsuresAmalgamability}
+functions. Given a diagram and a sink they homogenise the diagram and
+the sink by
+coercing the logic of each signature and each morphism to the logic of
+the target of the 
+sink and then passing it to the \sym{ensures\_amalgamability} function for
+this logic. \sym{ensures\_amalgamability} is defined as a part of
+\sym{StaticAnalysis} type class, to which all the logics implemented in
+\Hets\ belong.
+
+
+\section{Amalgamability Analysis for \CASL}
+The amalgamability checking for \CASL\ (specific for the \CASL\
+institution) is based on the algorithm
+presented in \cite{khtsm1}. All the code responsible for amalgamability
+analysis is in \module{CASL.Amalgamability}.
+
+\subsection{Data Structures}\label{impl:amalg:ds}
+
+The data structures used extensively throughout the amalgamabilty
+checking algorithm are equivalence relations. Two types corresponding
+to two different representations of these have been defined.
+\begin{itemize}
+\item \sym{EquivRel\;a} is a list of equivalence classes
+  (\code{[EquivClass\;a]}). \sym{EquivClass\;a} is a list of elements
+  of type \sym{a}. This is the representation commonly used in the
+  algorithm, particularly when inclusion of one equivalence into
+  another is to be checked.
+\item \sym{EquivRelTagged\;a\;b} is a list of pairs where the first element
+  has type \sym{a} and the second has type \sym{b} (\sym{[(a,
+  b)]}). The first element of a pair is 
+  interpreted as an element of relation domain, the second is an
+  equivalence class tag. Pairs with equal second elements represent
+  elements of the same equivalence class. This representation is used
+  while computing relations --- it makes iterating through the
+  elements of relation domain easy, since merging equivalence
+  classes does not change the order of elements in the list.
+\end{itemize}
+\sym{CASLDiag} is defined as a diagram (graph) whose nodes are
+labelled with \CASL\ signatures (\sym{CASLSign}) and edges are
+labelled with \CASL\ signature morphisms (\sym{CASLMor}). Types have
+been defined as well for elements of disjoint unions of sorts, operations,
+predicates and sort embeddings from the diagram; these are
+\sym{DiagSort}, \sym{DiagOp}, \sym{DiagPred} and \sym{DiagEmb}
+respectively. \sym{DiagEmbWord} is a list of \sym{DiagEmbs}.
+
+\subsection{Auxiliary Functions}\label{impl:amalg:af}
+
+The operation commonly performed throughout the algorithm is computing
+equivalence relations. It is usually done according to Algorithm
+\ref{alg:equiv}.
+\begin{algorithm}[H]
+\caption{Computing an equivalence relation\label{alg:equiv}}
+\dontprintsemicolon
+\AlgData{$\bullet$ a set $E$ of elements\\$\bullet$ a set $R$ of rules}
+\AlgResult{the least equivalence on $E$ satisfying all the rules in
+  $R$ represented as \sym{EquivRel}}
+\BlankLine
+\lnl{al:baseEquiv} $\msym{rel}\leftarrow$ the least equivalence on $E$ represented as
+\sym{EquivRelTagged}\;
+\ForEach{$\msym{mergeRule}\in R$}{
+  \lnl{al:merge} merge the equivalence classes in \sym{rel} according to \sym{mergeRule}\;
+}
+\lnl{al:conv} convert \sym{rel} from \sym{EquivRelTagged} to \sym{EquivRel}\;
+\return{\sym{rel}}\;
+\end{algorithm}
+
+Computing the equivalence in line \algline{1} is straightforward: 
+based on set $E$ (represented as a list) we need to create a list
+containing for each element $e\in E$ a pair $(e,e)$. This list would
+represent a relation where each element is in a different equivalence
+class, hence is in relation only with itself (see
+\ref{impl:amalg:ds} for explanation how an equivalence relation is
+represented using \sym{EquivRelTagged}). The conversion in line
+\algline{3} is performed by \sym{taggedValsToEquivClasses} function;
+the opposite conversion is also possible and is done by
+\sym{equivClassesToTaggedVals}. 
+Each element of $R$ is a function that given two elements $e_1,e_2\in
+E$ returns \sym{True} if $e_1$ and $e_2$ should be in relation
+according to the rule it represents and \sym{False}
+otherwise. Merging of equivalence classes from line \algline{2} is
+performed by \sym{mergeEquivClassesBy} function (described in
+Algorithm \ref{alg:mergeEquivClassesBy}). Note, that
+\sym{mergeRule} passed to Algorithm \ref{alg:mergeEquivClassesBy} does not
+depend on the current state of the relation 
+whose closure is being generated, hence it is possible to compute the
+closure in one pass, without resorting to fixpoint computation.
+\begin{algorithm}[H]
+\caption{\sym{mergeEquivClassesBy} function\label{alg:mergeEquivClassesBy}}
+\dontprintsemicolon
+\AlgData{$\bullet$ a function $\msym{mergeRule} : E \rightarrow E
+  \rightarrow Bool$\\$\bullet$ a relation \sym{rel} represented as
+  \sym{EquivRelTagged\;E\;T}} 
+\AlgResult{the least equivalence \sym{rel'} satisfying \sym{mergeRule}
+  such that $\msym{rel}\subseteq \msym{rel'}$}
+\BlankLine
+\ForEach{$(e_1, t_1)\in \msym{rel}$}{
+  \ForEach{$(e_2, t_2)\in \msym{rel}$}{
+    \If{$\msym{mergeRule}\;e_1\;e_2$}{
+      $\msym{rel}\leftarrow \msym{mergeEquivClasses}\;\msym{rel}\;t_1\;t_2$\;
+    }
+  }
+}
+\return{\sym{rel}}\;
+\end{algorithm}
+\begin{algorithm}[H]
+\caption{\sym{mergeEquivClasses} function\label{alg:mergeEquivClasses}}
+
+\dontprintsemicolon
+\AlgData{$\bullet$ a relation \sym{rel} represented as
+  \sym{EquivRelTagged\;E\;T}\\$\bullet$ a tag $t_1 : T$\\$\bullet$ a tag
+  $t_2 : T$} 
+\AlgResult{the relation \sym{rel} with equivalence classes represented by
+  $t_1$ and $t_2$ merged}
+\BlankLine
+\ForEach{$(e, t)\in \msym{rel}$}{
+  \lIf{$t = t_2$}{
+    replace $(e, t)$ by $(e, t_1)$ in \sym{rel}\;
+  }
+}
+\return{\sym{rel}}\;
+\end{algorithm}
+
+Another operation performed often is checking whether an inclusion
+between two relations holds. This is done by \sym{subRelation}
+function described in Algorithm \ref{alg:subRelation}.
+\begin{algorithm}[H]
+\caption{\sym{subRelation} function\label{alg:subRelation}}
+\dontprintsemicolon
+\AlgData{$\bullet$ an equivalence \sym{sub} represented as
+  \sym{EquivRel}\\$\bullet$ an equivalence \sym{sup} represented as 
+  \sym{EquivRel}} 
+\AlgResult{\sym{Just (e_1, e_2)} where $(e_1, e_2)\in \msym{sub}$ and $(e_1,
+  e_2)\not\in \msym{sup}$ or \sym{Nothing} if $\msym{sub}\subseteq \msym{sup}$} 
+\BlankLine
+\ForEach{equivalence class $\msym{eqcl}_\msym{sub}$ from \sym{sub}}{
+  $e_1\leftarrow$ the first element of $\msym{eqcl}_\msym{sub}$\;
+  \eIf{there exists an equivalence class in \sym{sup} containing
+    $e_1$}{
+    $\msym{eqcl}_\msym{sup}\leftarrow$ the equivalence class from \sym{sup} containing $e_1$\;
+  }{
+    $\msym{eqcl}_\msym{sup}\leftarrow$ an empty list\;
+  }
+  \ForEach{$e_2$ from $\msym{eqcl}_\msym{sub}$}{
+    \lIf{$e_2\not\in \msym{eqcl}_\msym{sup}$}{\return{\sym{Just (e_1, e_2)}}\;}
+  }
+}
+\return{\sym{Nothing}}\;
+\end{algorithm}
+
+
+\subsection{Functions}
+
+The main function in the module is \sym{ensuresAmalgamability}. It
+performs the amalgamability check based on the algorithm outlined in 
+\cite{khtsm1} and is a realisation of the analysis presented in
+Sect. \ref{staticAnalysis:amalg}; for the meaning of symbols used in
+Algorithm  
+\ref{alg:ensuresAmalg} please refer to that section. Note that
+$\simeq$ (and, correspondingly,  
+$\simeq_\tau$) have been split to three relations: $\simeq$ for sorts,
+$\simeq^{Op}$ for operations and $\simeq^{Pred}$ for
+predicates. Subsort embeddings are dealt with using $\cong$ and
+$\cong_\tau$ relations. 
+\begin{algorithm}[H]
+\caption{\sym{ensuresAmalgamability} function\label{alg:ensuresAmalg}}
+\dontprintsemicolon
+\AlgData{$\bullet$ diagram $D$\\$\bullet$ sink $\tau$ --- a list of
+  pairs $(p_i, \tau_i)$, where $p_i$ is a node in $D$ and $\tau_i:D(p_i)\rightarrow\Sigma$ is a
+  signature morphism; $\Sigma$ is common for all the morphisms in the sink}
+\AlgResult{\sym{Yes}, \sym{No} or \sym{DontKnow}, saying whether $D$ ensures amalgamability for $\tau$}
+\BlankLine
+\nl compute $\simeq$ for $D$ and $\simeq_\tau$ for $D$, $\tau$\;
+\lIf{$\simeq_\tau\,\not\subseteq\,\simeq$}{
+  \return{\sym{No}}\;
+}\Else{
+  \nl compute $\simeq^{Op}$ for $D$ and $\simeq^{Op}_\tau$ for $D$, $\tau$\;
+  \lIf{$\simeq^{Op}_\tau\,\not\subseteq\,\simeq^{Op}$}{
+    \return{\sym{No}}\;
+  }\Else{
+    \nl compute $\simeq^{Pred}$ for $D$ and $\simeq^{Pred}_\tau$ for $D$, $\tau$\;
+    \lIf{$\simeq^{Pred}_\tau\,\not\subseteq\,\simeq^{Pred}$}{
+      \return{\sym{No}}\;
+    }\Else{
+      \nl compute $\cong_\tau$ for $\tau$, $\simeq_\tau$\;
+      \nl $\cong^0_\tau\leftarrow\cong_\tau$ restricted to non-reflexive
+      elements\;  
+      \nl compute $\cong_0$ for $D$, $\simeq$\;
+      \lIf{$\cong^0_\tau\,\subseteq\,\cong_0$}{
+	\return{\sym{Yes}}\;
+      }\Else{
+	compute $\msym{Embs}(D)$ for $D$\;
+	\nl compute $\sim$ for $D$, $\msym{Embs}(D)$\;
+	\nl $\cong^C_\tau\leftarrow\cong_\tau$ translated to canonical
+	embeddings using $\sim$\;
+	\nl\eIf{$Adm_\simeq$ is finite}{
+	  \nl compute $Adm_\simeq$ for $\msym{Embs}(D)$, $\simeq$\;
+	  \nl\lIf{colimit of $D$ is thin (for $\simeq$,
+	    $\msym{Embs}(D)$, $\cong_0$)}{
+	    \return{\sym{Yes}}\;
+	  }\Else{
+	    \nl compute $\msym{CanonicalEmbs}(D)$ for $\sim$\;
+	    \nl compute $Adm^C_\simeq$ for $\msym{CanonicalEmbs}(D)$, $\simeq$\;
+	    \nl compute $\cong$ for $Adm^C_\simeq$, $\simeq$, $\sim$\;
+	    \lIf{$\cong^C_\tau\,\subseteq\,\cong$}{
+	      \return{\sym{Yes}}\;
+	    }\lElse{
+	      \return{\sym{No}}\;
+	    }
+	  }
+	}{
+	  \nl compute $\cong^R$ for $D$, $\simeq$, $\sim$\;
+	  \lIf{$\cong^C_\tau\,\subseteq\,\cong^R$}{
+	    \return{\sym{Yes}}\;
+	  }\lElse{
+	    \return{\sym{DontKnow}}\;
+	  }
+	}
+      }
+    }
+  }
+}
+\end{algorithm}
+
+First (line \algline{1} of Algorithm \ref{alg:ensuresAmalg}),
+equivalences $\simeq$ and $\simeq_\tau$ need to be 
+computed. This is performed by \sym{simeq} and \sym{simeq\_tau}
+respectively (Algorithms \ref{alg:simeq} and
+\ref{alg:simeqtau}). Computations of $\cdot^{Op}$ and $\cdot^{Pred}$
+variants (lines 
+\algline{2} and \algline{3} in Algorithm \ref{alg:ensuresAmalg}) of
+$\simeq$ and $\simeq_\tau$ are done in exactly the same way.
+\begin{algorithm}[H]
+\caption{\sym{simeq} function\label{alg:simeq}}
+\dontprintsemicolon
+\AlgData{diagram $D$}
+\AlgResult{the $\simeq$ relation represented as \sym{EquivRel\;
+    DiagSort}}
+\BlankLine
+$\msym{Sorts}(D)\leftarrow$ the set of all the sorts in $D$\;
+$rel\leftarrow$ the least equivalence on $\msym{Sorts}(D)$ represented as
+\sym{EquivRelTagged}\;
+$\msym{mergeCond}\leftarrow\lambda s.\lambda s'.$ ``there exists morphism in
+$D$ that maps $s$ to $s'$ or $s'$ to $s$''\;
+$\msym{rel}\leftarrow \msym{mergeEquivClassesBy}\;\msym{mergeCond}\;\msym{rel}$\;
+$\msym{rel}\leftarrow \msym{taggedValsToEquivClasses}\;\msym{rel}$\;
+\return{\sym{rel}}\;
+\end{algorithm}
+\begin{algorithm}[H]
+\caption{\sym{simeq\_tau} function\label{alg:simeqtau}}
+\dontprintsemicolon
+\AlgData{$\bullet$ the diagram $D$\\$\bullet$ the sink $\tau$ --- a list of
+  pairs $(p_i, \tau_i)$, where $p_i$ is a node in $D$ and $\tau_i:D(p_i)\rightarrow\Sigma$ is a
+  signature morphism; $\Sigma$ is common for all the morphisms in the sink}
+\AlgResult{the $\simeq_\tau$ relation represented as \sym{EquivRel\;
+    DiagSort}}
+\BlankLine
+$\msym{rel}\leftarrow$ an empty list\;
+\ForEach{$(p_i, \tau_i)\in\tau$}{
+  \ForEach{sort $s$ from $D(p_i)$}{
+    $t\leftarrow \tau_i(s)$\;
+    add a pair $((p_i,s),t))$ to \sym{rel}\;
+  }
+}
+$\msym{rel}\leftarrow \msym{taggedValsToEquivClasses}\;rel$\;
+\return{\sym{rel}}\;
+\end{algorithm}
+
+The next point after checking the sharing condition is computing
+$\cong_\tau$, $\cong^0_\tau$ and $\cong_0$ (lines
+\algline{4}-\algline{6}). $\cong_\tau$ is computed by \sym{cong\_tau}
+function (Algorithm \ref{alg:congtau}).
+\begin{algorithm}[H]
+\caption{\sym{cong\_tau} function\label{alg:congtau}}
+\dontprintsemicolon
+\AlgData{$\bullet$ the diagram $D$\\$\bullet$ the sink $\tau$ --- a
+  list of pairs $(p_i, \tau_i:D(p_i)\rightarrow\sigma)$\\$\bullet$ the
+  $\simeq_\tau$ relation represented as \sym{EquivRel\;DiagSort}}
+\AlgResult{the $\cong_\tau$ relation represented as \sym{EquivRel\;
+    DiagEmbWord}}
+\BlankLine
+$\msym{Embs}(\tau)\leftarrow$ the set of all pairs $(p, e)$ such that $p$ is
+a node in one of the pairs from $\tau$\\
+\Indp and $e$ is an embedding in $D(p)$\;\Indm
+$W\leftarrow \msym{looplessWords}\;\msym{Embs}(\tau)\;\simeq_\tau$\;
+$\msym{rel}\leftarrow$ the least equivalence on $W$\;
+$\msym{mergeCond}\leftarrow\lambda\omega.\lambda\upsilon.dom(\omega)\simeq_\tau
+dom(\upsilon)$ and $cod(\omega)\simeq_\tau cod(\upsilon)$\;
+$\msym{rel}\leftarrow \msym{mergeEquivClassesBy}\;\msym{mergeCond}\;\msym{rel}$\;
+$\msym{rel}\leftarrow \msym{taggedValsToEquivClasses}\;\msym{rel}$\;
+\return{\sym{rel}}\;
+\end{algorithm}
+In order to obtain $\cong^0_\tau$ it's sufficient to filter out these
+equivalence classes from $\cong_\tau$ that have just one
+element. Generating $\cong_0$ boils down to building the least
+equivalence on one-letter words (i.e. single embeddings), merging
+equivalence classes according to \rulename{Diag} rule and finally
+closing the relation w.r.t. \rulename{Comp} rule by generating all the
+two-letter words and inserting them into appropriate equivalence
+classes. This is illustrated in Algorithm \ref{alg:cong0}. The
+\sym{diagRule} in line \algline{1} is a (simple to construct) functional
+representation of the \rulename{Diag} rule.
+\begin{algorithm}[H]
+\caption{\sym{cong\_0} function\label{alg:cong0}}
+\dontprintsemicolon
+\AlgData{$\bullet$ the diagram $D$\\$\bullet$ the
+  $\simeq$ relation represented as
+  \sym{EquivRel\;DiagSort}}
+\AlgResult{the $\cong_0$ relation represented as \sym{EquivRel\;
+    DiagEmbWord}}
+\BlankLine
+$\msym{Embs}(D)\leftarrow$ the set of all sort embeddings in $D$\;
+$W\leftarrow$ the set of all one-letter words over $\msym{Embs}(D)$\;
+$\msym{rel}\leftarrow$ the least equivalence on $W$\;
+\nl $\msym{rel}\leftarrow \msym{mergeEquivClassesBy}\;\msym{diagRule}\;\msym{rel}$\;
+$\msym{rel}\leftarrow \msym{taggedValsToEquivClasses}\;\msym{rel}$\;
+$W_2\leftarrow$ the set of all $\simeq$-admissible two-letter words over $\msym{Embs}(D)$\;
+\ForEach{$\omega\in W_2$}{
+  \ForEach{$\msym{eqcl}\in \msym{rel}$}{
+    $\upsilon\leftarrow$ the first word in $\msym{eqcl}$\;
+    \If{$dom(\omega)= dom(\upsilon)$ {\bf and} $cod(\omega)=
+      cod(\upsilon)$}{
+      add $\omega$ to $\msym{eqcl}$\;
+      \KwSty{break}\;
+    }
+  }
+}
+\return{\sym{rel}};
+\end{algorithm}
+
+Computing $\sim$ (line \algline{7} in Algorithm
+\ref{alg:ensuresAmalg}) boils down to applying the \rulename{Diag}
+rule of cell calculus to $\msym{Embs}(D)$ and closing the resulting
+relation w.r.t \rulename{Cong1} rule (see
+Sect. \ref{impl:amalg:opt}). This is done in function \sym{sim}
+presented in Algorithm \ref{alg:sim}. \sym{congruenceClosure} function
+from line \algline{1} is described in Algorithm
+\ref{alg:congClosure}. 
+\begin{algorithm}[H]
+\caption{\sym{sim} function\label{alg:sim}}
+\dontprintsemicolon
+\AlgData{$\bullet$ a diagram $D$\\$\bullet$ a set \sym{Embs} of sort embeddings represented as a list
+  \sym{[DiagEmb]}} 
+\AlgResult{the relation $\sim$ represented as \sym{EquivRel\;DiagEmb}} 
+\BlankLine
+$\msym{rel}\leftarrow$ the least equivalence on \sym{Embs}\;
+$\msym{rel}\leftarrow
+\msym{mergeEquivClassesBy}\;\msym{diagRule}\;\msym{rel}$\;
+$\msym{check}\leftarrow\lambda (p, e).\lambda (q, d).$``$p = q$ and \sym{Embs}
+ contains a pair $(p, ed)$''\;
+$\msym{op}\leftarrow\lambda (p, e).\lambda (q, d).(p, ed)$\;
+\Repeat{fixpoint on \sym{rel} is reached}{
+  \nl$\msym{rel}\leftarrow
+  \msym{congruenceClosure}\;\msym{check}\;\msym{op}\;\msym{rel}$\; 
+}
+$\msym{rel}\leftarrow \msym{taggedValsToEquivClasses}\;\msym{rel}$\;
+\return{\sym{rel}}\;
+\end{algorithm}
+\begin{algorithm}[H]
+\caption{\sym{congruenceClosure} function\label{alg:congClosure}}
+\dontprintsemicolon
+\AlgData{$\bullet$ \sym{check}$:\msym{E}\rightarrow\msym{E}\rightarrow
+  \msym{Bool}$ --- a function that checks rule prerequisite\\$\bullet$ 
+  \sym{op}$:\msym{E}\rightarrow\msym{E}\rightarrow\msaym{E}$ --- a
+  function combining two elements\\$\bullet$ a relation \sym{rel} represented as
+  \sym{EquivRelTagged\;E\;T}}
+\AlgResult{a relation \sym{rel'} obtained from \sym{rel} by applying
+the \rulename{Cong} rule once to each combination of elements in
+\sym{rel}}
+\BlankLine
+\ForEach{pair $(\omega, t_\omega)\in \msym{rel}$}{
+  \ForEach{pair $(\upsilon, t_\upsilon)\in \msym{rel}$ such that $t_\omega = t_\upsilon$}{
+    \ForEach{pair $(\psi, t_\psi)\in \msym{rel}$ such that
+      (\sym{check} $\omega$ $\psi$)}{
+      \ForEach{pair $(\phi, t_\phi)\in \msym{rel}$ such that $t_\psi =
+	t_\phi$ and (\sym{check} $\upsilon$ $\phi$)}{
+	\lIf{a pair $(\msym{op}\;\omega\;\psi, t)\in \msym{rel}$}{
+	  $t_{\omega\psi}\leftarrow t$\;
+	}\lElse{
+	  $t_{\omega\psi}\leftarrow \msym{Nothing}$\;
+	}
+	\lIf{a pair $(\msym{op}\;\upsilon\;\phi, t)\in \msym{rel}$}{
+	  $t_{\upsilon\phi}\leftarrow t$\;
+	}\lElse{
+	  $t_{\upsilon\phi}\leftarrow \msym{Nothing}$\;
+	}
+	\If{$t_{\omega\psi}\neq \msym{Nothing}$ {\bf and}
+	  $t_{\upsilon\phi}\neq \msym{Nothing}$}{
+	  $\msym{rel}\leftarrow \msym{mergeEquivClasses}\;\msym{rel}\;t_{\omega\psi}\;t_{\upsilon\phi}$\;
+	}
+      }
+    }
+  }
+}
+\return{\sym{rel}}\;
+\end{algorithm}
+
+We take the first element of each equivalence class of $\sim$ to
+be the canonical embedding that represents the whole equivalence
+class. The translation from line \algline{8} in Algorithm
+\ref{alg:ensuresAmalg} is therefore straightforward.
+The check if $\msym{Adm}_\simeq$ is finite (line \algline{9} in Algorithm
+\ref{alg:ensuresAmalg}) and the 
+computation of this set (line \algline{10}) are actually performed
+together by \sym{finiteAdm\_simeq} function (Algorithm
+\ref{alg:finiteAdm}). $\epsilon$ denotes an empty word (i.e. empty
+list). \sym{Nothing} doesn't mean non-termination --- it is a proper
+return value. 
+\begin{algorithm}[H]
+\caption{\sym{finiteAdm\_simeq} function\label{alg:finiteAdm}}
+\dontprintsemicolon
+\AlgData{$\bullet$ a set \sym{Embs} of sort embeddings represented as a list
+  \sym{[DiagEmb]}\\$\bullet$ a relation $\simeq$ that defines
+  admissibility represented as \sym{EquivRel\;DiagSort}} 
+\AlgResult{\sym{Just\;Adm_\simeq} if \sym{Adm_\simeq} is finite; \sym{Nothing}
+  otherwise} 
+\BlankLine
+\nl\return{$\msym{embWords}\;\msym{Embs}\;(\simeq)\;\epsilon$}\;
+\end{algorithm}
+\begin{algorithm}[H]
+\caption{\sym{embWords} function\label{alg:embWords}}
+\dontprintsemicolon
+\AlgData{$\bullet$ a set \sym{Embs} of sort embeddings represented as a list
+  \sym{[DiagEmb]}\\$\bullet$ a relation $\simeq$ that defines
+  admissibility represented as \sym{EquivRel\;DiagSort}\\$\bullet$ a word
+  $\omega : \msym{DiagEmbWord}$} 
+\AlgResult{$\msym{Just}\;W$ (where $W$ is the set of all the
+  $\simeq$-admissible words over \sym{Embs}
+  ending with $\omega$) if $W$ is finite; \sym{Nothing} otherwise} 
+\BlankLine
+\lIf{$\omega=\epsilon$}{
+  $W\leftarrow$ an empty list\;
+}\lElse{
+  $W\leftarrow$ a singleton of $\omega$\;
+}
+\ForEach{$e\in \msym{Embs}$}{
+  \If{$e\omega$ is $\simeq$-admissible}{
+    \lIf{$e$ occurs in $\omega$}{
+      \return{\sym{Nothing}}\;
+    }\Else{
+      $W_?'\leftarrow \msym{embWords}\;\msym{Embs}\;(\simeq)\;e\omega$\;
+      \Switch{$W_?'$}{
+	\Case{\sym{Nothing}}{\return{\sym{Nothing}}}
+	\Case{$\msym{Just}\;W'$}{$W\leftarrow W\cup W'$}
+      }
+    }
+  }
+}
+\return{$W$}\;
+\end{algorithm}
+
+The colimit thinness check from line \algline{11} in Algorithm
+\ref{alg:ensuresAmalg} is probably the most complex piece of code in
+the module. It is illustrated in Algorithm \ref{alg:colimitIsThin}.
+\begin{algorithm}[H]
+\caption{\sym{colimitIsThin} function\label{alg:colimitIsThin}}
+\dontprintsemicolon
+\AlgData{$\bullet$ a relation $\simeq$ represented as
+  \sym{EquivRel\;DiagSort}\\$\bullet$ a set \sym{Embs} of sort
+  embeddings (from diagram $D$) represented as list
+  \sym{[DiagEmb]}\\$\bullet$ a relation 
+  $\cong_0$ represented as \sym{EquivRel\;DiagEmbWord}}
+\AlgResult{\sym{True} if the colimit of $D$ is thin, \sym{False} otherwise}
+\BlankLine
+\nl $\msym{Sorts_C}\leftarrow$ the list of first elements of each equivalence
+class in $\simeq$\;
+\nl $\simeq\leftarrow \msym{equivClassesToTaggedVals}\;\simeq$\;
+\lForEach{$s\in \msym{Sorts_C}$}{
+  $\msym{ordMap(s)} \leftarrow \emptyset$\;
+}
+\nl \lForEach{$e\in \msym{Embs}$}{
+  $\msym{ordMap(dom_C(e))}\leftarrow \msym{ordMap(dom_C(e))}\cup\{cod_C(e)\}$\;
+}
+\nl\ForEach{pair $(s_1, s_2)$ of sorts from \sym{Sorts_C}}{
+  $S_\geq(s_1, s_2)\leftarrow$ the set of colimit sorts $t$ such that
+  $t\geq s_1$ and $t\geq s_2$\;
+}
+\nl\ForEach{pair $(s_1, s_2)$ of sorts from \sym{Sorts_C}}{
+  $\msym{rel}\leftarrow$ the least equivalence on $S_\geq(s_1, s_2)$\;
+  $\msym{mergeCond}\leftarrow\lambda s'.\lambda s''.S_\geq(s', s'')\neq\emptyset$ \;
+  $\msym{rel}\leftarrow \msym{mergeEquivClassesBy}\;\msym{mergeCond}\;\msym{rel}$\;
+  $B(s_1, s_2)\leftarrow \msym{taggedValsToEquivClasses}\;\msym{rel}$\;
+}
+\nl\While{\sym{ordMap} is not empty}{
+  $s\leftarrow$ a sort $t\in \msym{Sorts_C}$ such that
+  $\msym{ordMap(t)}=\emptyset$\;
+  $\msym{ordMap}\leftarrow \msym{ordMap}$ with the mapping for $s$ removed\;
+  \ForEach{$t\in \msym{Sorts_C}$ such that \sym{ordMap(t)} is defined}{
+    $\msym{ordMap(t)}\leftarrow \msym{ordMap(t)}\setminus\{s\}$\;
+  }
+  \nl$\msym{Embs_s}\leftarrow$ all $e\in \msym{Embs}$ such that $dom_C(e) = s$\;
+  $C\leftarrow$ an empty map\;
+  \lForEach{pair $(d, e)$ of embeddings from \sym{Embs_s}}{
+    $C(d, e)\leftarrow$ an empty list\;
+  }
+  \ForEach{pair $(d, e)$ of embeddings from \sym{Embs_s} such that
+    $d\cong_0 e$}{
+    $C(d, e)\leftarrow B(cod_C(d), cod_C(e))$\;
+  }
+  \ForEach{pair $(d, e)$ of embeddings from \sym{Embs_s} such that $dom(d)
+    = dom(e)$}{
+    \If{there exists $f\in \msym{Embs}$ such that $dom(f) = cod(d)$ and
+      $cod(f) = cod(e)$}{
+      $\beta\leftarrow$ the equivalence class from $B(cod_C(d),
+      cod_C(e))$ that contains $cod_C(e)$\;
+      add $\beta$ to $C(d, e)$ and to $C(e, d)$\;
+    }
+  }
+  \Repeat{fixpoint of $C$ is reached}{
+    \ForEach{tuple $(e_1, e_2, e_3)$ of embeddings from \sym{Embs_s}}{
+      \ForEach{tuple $(\beta_{12}, \beta_{23}, \beta_{13})$ where
+	$\beta_{12}\in C(e_1, e_2)$, $\beta_{23}\in C(e_2, e_3)$,
+	$\beta_{13}\in B(e_1, e_3)$}{
+	\If{$\beta_{12}\cap\beta_{23}\cap\beta_{13}\neq\emptyset$}{
+	  add $\beta_{13}$ to $C(e_1, e_3)$ and to $C(e_3, e_1)$ if
+	  it's not already there\;
+	}
+      }
+    }
+  }
+  \nl\ForEach{pair $(d, e)$ of embeddings from \sym{Embs_s}}{
+    \lIf{$B(cod_C(d),cod_C(e))\not\subseteq C(d, e)$}{
+      \return{\sym{False}}\;
+    }
+  }
+}
+\return{\sym{True}}\;
+\end{algorithm}
+
+The set \sym{Sorts_C} in line \algline{1} is the set of colimit sorts; a
+colimit sort is an equivalence class of $\simeq$, therefore an
+element from each class is chosen to represent the colimit sort. For
+embedding $e$, let $dom_C(e)$ and $cod_C(e)$ denote the colimit 
+sorts --- i.e. the equivalence classes of $\simeq$ --- to which
+(respectively) $dom(e)$ and $cod(e)$ belong. In line \algline{2} the
+relation $\simeq$ is converted to 
+\sym{EquivRelTagged} representation; each sort is tagged with the first
+element of its equivalence class in $\simeq$. Note that the sorts used
+for tags are the same sorts that represent colimit sorts in
+\sym{Sorts_C}. The loop in line \algline{3} constructs \sym{ordMap} --- a map
+that represents partial order on \sym{Sorts_C} by mapping $s$ to
+the sorts immediately larger, i.e. such sorts $t$ that there exists an
+embedding mapping sort from equivalence class of $s$ to a sort from
+equivalence class of $t$. We use $\geq$ symbol to denote
+the order imposed by \sym{ordMap}. The map $S_\geq$ constructed
+in line \algline{4} maps each pair $(s_1, s_2)$ of colimit sorts to
+the set of colimit sorts that are larger or equal than both $s_1$ and
+$s_2$. The map $B$ created in line \algline{5} maps each pair $(s_1,
+s_2)$ of colimit sorts to an equivalence on $S_\geq(s_1, s_2)$.
+
+The colimit thinness check should answer the following question: are
+all the cells over $D$ derivable in the cell calculus? 
+We call a cell $(\omega,
+\upsilon)$ an \nterm{$s$-cell} if the equivalence class of
+$dom(\omega)$ and $dom(\upsilon)$ is $s$. The algorithm relies on the
+observaion that for any
+$s$-cell $c$ all the derivations of $c$ involve only such $t$-cells
+for which $t\geq s$. The loop in line \algline{6} is the implementation
+of an induction on the colimit sorts: assuming that for all
+$t>s$ all $t$-cells belong to $\cong$, check that all $s$-cells belong
+to $\cong$. 
+The set $Embs_s$ computed in line \algline{7} contains all the sort
+embeddings whose domains are in $s$. The map $C$ (computed in the
+subsequent lines) maps a pair $(d, e)$ of embeddings from $Embs_s$ to
+a set of cells 
+where first path starts with $d$ and the second starts with
+$e$. Roughly, $C$ can be thought of as a set of cells derivable in the
+cell calculus, while $B$ represents all the cells in $D$; therefore
+the check in line \algline{8} answers the question of colimit
+thinness. 
+For a thorough description of this algorithm and a proof of its
+correctness please see the extended version of \cite{khtsm1}.
+
+As mentioned above, $\msym{CanonicalEmbs}(D)$ (line \algline{12} in
+Algorithm \ref{alg:ensuresAmalg}) is just a list consisting of the
+first elements from each equivalence class of $\sim$. $Adm^C_\simeq$
+in line \algline{13} is then computed using Algorithm
+\ref{alg:finiteAdm} --- we ensured that $Adm_\simeq$ is finite, so
+$Adm^C_\simeq$ must be finite as well. Generating $\cong$ (line
+\algline{14}) is slightly more complicated than in case of
+previous relations, since the rules of cell calculus (presented in
+Sect. \ref{staticAnalysis:cellcalc}) and the rule \rulename{CompDiag}
+(Sect. \ref{impl:amalg:opt}) need to be represented somehow in order
+to use them in our framework for constructing equivalences. Rules
+\rulename{Refl}, \rulename{Symm} and \rulename{Trans} hold
+automatically in the construction presented. Rule \rulename{CompDiag}
+is simple, since it does not require refering to 
+existing relation; hence closures w.r.t. those rules can be computed
+in one pass using \sym{mergeEquivClassesBy}. Closures for 
+\rulename{Cong} and \rulename{Lc} are represented by functions
+\sym{congruenceClosure} and \sym{leftCancellableClosure}
+respectively, illustrated in Algorithms \ref{alg:congClosure} and
+\ref{alg:lcClosure}. Note, that despite of function names, in order to
+obtain actual closure one needs to subsequently apply
+\sym{congruenceClosure} and \sym{leftCancellableClosure} until a
+fixpoint is reached.
+\begin{algorithm}[H]
+\caption{\sym{leftCancellableClosure} function\label{alg:lcClosure}}
+\dontprintsemicolon
+\AlgData{a relation \sym{rel} represented as
+  \sym{EquivRelTagged\;DiagEmbWord\;DiagEmbWord}}
+\AlgResult{a relation \sym{rel'} obtained from \sym{rel} by applying
+  the \rulename{Lc} rule once to each common prefix of each pair of
+  words in \sym{rel}} 
+\BlankLine
+\ForEach{pair $(\omega, t_\omega)\in \msym{rel}$}{
+  \ForEach{pair $(\upsilon, t_\upsilon)\in \msym{rel}$ such that
+    $t_\upsilon=t_\omega$}{
+    \Repeat{$e_\omega\neq e_\upsilon$ {\bf or} $\omega$ is empty
+      {\bf or} $\upsilon$ is empty}{ 
+      $e_\omega\leftarrow$ the first letter of $\omega$\;
+      $\omega\leftarrow\omega$ with first letter removed\;
+      $e_\upsilon\leftarrow$ the first letter of $\upsilon$\;
+      $\upsilon\leftarrow\upsilon$ with first letter removed\;
+      \If{$e_\omega = e_\upsilon$ {\bf and} $\omega$ is not empty
+	{\bf and} $\upsilon$ is not empty}{
+	$t_\omega\leftarrow t$ where $(\omega, t)\in \msym{rel}$\;
+	$t_\upsilon\leftarrow t$ where $(\upsilon, t)\in \msym{rel}$\;
+	$\msym{rel}\leftarrow \msym{mergeEquivClasses}\;\msym{rel}\;t_\omega\;t_\upsilon$\;
+      }
+    }
+  }
+}
+\return{\sym{rel}}\;
+\end{algorithm}
+
+Now the \sym{cong} function used to compute $\cong$ may be defined as
+shown in Algorithm \ref{alg:cong}. The $\cong^R$ from line
+\algline{11} is computed using the same function --- only the set of
+words passed to it is restricted to loopless words over canonical
+embeddings. 
+\begin{algorithm}[H]
+\caption{\sym{cong} function\label{alg:cong}}
+\dontprintsemicolon
+\AlgData{$\bullet$ a set $W$ of embedding words, represented as
+  list \sym{[DiagEmbWord]}\\$\bullet$ a relation $\simeq$ represented as
+  \sym{EquivRel\;DiagSort}\\$\bullet$ a relation $\sim$ represented as
+  \sym{EquivRel\;DiagEmb} (for \sym{compDiagRule})} 
+\AlgResult{the least equivalence on $W$ satisfying all the rules of
+  cell calculus w.r.t. $\simeq$} 
+\BlankLine
+$\msym{rel}\leftarrow$ the least equivalence on $W$\;
+$\msym{rel}\leftarrow \msym{mergeEquivClassesBy}\;\msym{compDiagRule}\;\msym{rel}$\;
+$\msym{check}\leftarrow\lambda \omega.\lambda
+\upsilon.cod(\omega)\simeq dom(\upsilon)$\;
+$\msym{op}\leftarrow\lambda \omega.\lambda \upsilon.\upsilon\omega$\;
+\Repeat{fixpoint on \sym{rel} is reached}{
+  $\msym{rel}\leftarrow \msym{congruenceClosure}\;\msym{check}\;\msym{op}\;\msym{rel}$\;
+  $\msym{rel}\leftarrow \msym{leftCancellableClosure}\;\msym{rel}$\;
+}
+$\msym{rel}\leftarrow \msym{taggedValsToEquivClasses}\;\msym{rel}$\;
+\return{\sym{rel}}\;
+\end{algorithm}
+
+
+
+% ====================================================================
+% SUMMARY
+
+
+\chapter{Summary}
+
+Parsing and static analysis of architectural specifications and
+amalgamability analysis for \CASL\ has been implemented in \Hets\ and 
+presented in this thesis. While parsing and institution-independent
+static analysis exactly follow the formal definitions presented in
+\cite{refman}, it is the amalgamability analysis that turns
+out most challenging.
+
+Although the algorithms implemented perform in a satisfactory manner
+for most of real-world specifications, their efficiency turns
+out to be low in certain cases and optimisations should be
+pursued. Even though in general the problems are PSPACE hard, it should
+be possible to achieve significant performance improvements. In
+particular \sym{congruenceClosure} and \sym{colimitIsThin} functions suffer
+from high time-complexity. A variation of Nelson-Oppen congruence
+closure algorithm \cite{no1} might be considered in the first
+case. 
+
+The comparison of architecture specfication analysis support in CATS
+and \Hets\ 
+revealed that while CATS delivers more consistent time performance it
+sometimes fails to detect lack of amalgamability. E.g. although
+the sample 
+specification \ref{samp:failAmalg} is incorrect --- because of the problem
+with embeddings described in \ref{staticAnalysis:cellcalc} --- CATS does
+not issue any warning or error. Also the error messages given by
+\Hets\ are more meaningful, as they specify which elements of
+signatures do not ensure amalgamability. 
+
+Further work on the architectural specification support in \Hets\
+might include 
+generating proof obligations when the amalgamability conditions cannot
+be verified statically. This would also require implementing a
+verification calculus for architectural specifications \cite{hoff1},
+which is a complex area with several open research problems. 
+
+\paragraph{Acknowledgments} I would like to express my gratitude to
+Andrzej Tarlecki, who has introduced me to the subject of \CASL\ and
+architectural specifications and has supervised this thesis. I would
+also like to thank Till Mossakowski and Piotr Hoffman for their
+assistance while implementing the analysis of architectural
+specifications in \Hets.
+
+
+% ====================================================================
+% APPENDIX
+
+
+\appendix
+
+\chapter{Sample Specifications}
+
+\section{Failing Sharing Check}
+\begin{EXAMPLE}
+\I\SPEC \NAMEDEFN{Spec\_1} = \SORT $s$
+\I\SPEC \NAMEDEFN{Spec\_2} = \SORTS $s$, $t$
+\\
+\I\ARCHSPEC \NAMEDEFN{Arch\_Spec\_1} =
+\begin{ITEMS}
+\I\UNITS \[
+  U : \NAMEDEFN{Spec\_1};\\
+  F : \NAMEDEFN{Spec\_1} \TOTAL \NAMEDEFN{Spec\_2};\\
+  G : \NAMEDEFN{Spec\_1} \TOTAL \NAMEDEFN{Spec\_2};
+\]
+\I\RESULT F[U] \AND G[U]
+\end{ITEMS}
+\I\END 
+\end{EXAMPLE} 
+\\\\
+In the result of specification \NAMEDEFN{Arch\_Spec\_1} the sorts $t$
+from F[U] and G[U] are identified although they might have different
+interpretations.
+
+\section{Using \rulename{Lc} Rule}
+\begin{EXAMPLE}
+\I\SPEC \NAMEDEFN{Spec\_1} = \SORTS $s < u$; $t<u$
+\I\SPEC \NAMEDEFN{Spec\_2} = \SORTS $s < t$; $s < u$; $t<u$
+\\
+\I\ARCHSPEC \NAMEDEFN{Arch\_Spec\_1} =
+\begin{ITEMS}
+\I\UNITS \[
+  U : \NAMEDEFN{Spec\_1};\\
+  F : \NAMEDEFN{Spec\_1} \TOTAL \NAMEDEFN{Spec\_2};\\
+  G : \NAMEDEFN{Spec\_1} \TOTAL \NAMEDEFN{Spec\_2};
+\]
+\I\RESULT F[U] \AND G[U]
+\end{ITEMS}
+\I\END 
+\end{EXAMPLE} 
+\\\\
+Here the \rulename{Lc} rule of cell calculus is required to ensure
+that $s<t$ in F[U] and $s<t$ in G[U] are equal.
+
+\section{Failing Cell Condition}
+\label{samp:failAmalg}
+\begin{EXAMPLE}
+\I\SPEC \NAMEDEFN{Spec\_1} = \SORTS $s$, $t$, $u$
+\I\SPEC \NAMEDEFN{Spec\_2} = \SORTS $s < t$, $u$
+\I\SPEC \NAMEDEFN{Spec\_3} = \SORTS $s < u$, $t < u$
+\\
+\I\ARCHSPEC \NAMEDEFN{Arch\_Spec\_1} =
+\begin{ITEMS}
+\I\UNITS \[
+  U : \NAMEDEFN{Spec\_1};\\
+  F : \NAMEDEFN{Spec\_1} \TOTAL \NAMEDEFN{Spec\_2};\\
+  G : \NAMEDEFN{Spec\_1} \TOTAL \NAMEDEFN{Spec\_3};
+\]
+\I\RESULT F[U] \AND G[U]
+\end{ITEMS}
+\I\END 
+\end{EXAMPLE} 
+\\\\
+This example (with more meaningful sort names) has been discussed in
+\ref{staticAnalysis:cellcalc}. The embedding paths $s < u$ and $s < t
+< u$ in the amalgamation are not guaranteed to commute.
+
+
+
+\chapter{CD-ROM Contents}
+
+The attached CD-ROM contains the source code of \Hets. This is the
+version that was obtained from CVS at the moment of finishing this thesis.
+
+\section{Directories}
+\begin{itemize}
+\item \path{HetCATS} -- the source code of \Hets,
+\item \path{uni} -- the source code of UniForm Workbench that contains
+  libraries required by \Hets.
+\end{itemize}
+
+
+\section{Compiling \Hets}
+Current version of GHC\footnote{See
+  \webaddr{http://www.haskell.org/ghc}} is required in order to
+  compile \Hets. \Hets\ is known to compile on Linux and Solaris.
+
+\begin{enumerate}
+\item When in directory containing \path{uni} and \path{HetCATS}
+  directories, enter the following commands:
+  \begin{verbatim}
+cd uni
+./configure --enable-Het
+make boot
+make packages
+cd ../HetCATS
+  \end{verbatim}
+\item Edit the \path{Makefile} in \path{HetCATS} directory: update the
+  variable {\tt LINUX\_IMPORTS} to match the \path{imports} path of
+  your GHC installation (usually \path{/usr/lib/ghc-*/imports}).
+\item Enter {\tt make} in order to build \Hets.
+\end{enumerate}
+
+
+\section{Running \Hets}
+In order to run \Hets\ enter the directory containing the executable
+file \path{hets} and enter:
+\begin{verbatim}
+./hets
+\end{verbatim}
+This will display a quick reference of \Hets\ command-line
+commands. The command flag \verb!--casl-amalg! gives the user control
+over \CASL\ amalgamability checking algorithms. Its syntax is
+\begin{verbatim}
+--casl-amalg=<analysis option list>
+\end{verbatim}
+where {\tt<analysis option list>} is a comma-separated list of zero or
+more of following options:
+\begin{itemize}
+\item {\tt sharing} --- perform sharing analysis,
+\item {\tt cell} --- analyse the cell condition (both general and
+  restricted); this option implies {\tt sharing},
+\item {\tt colimit-thinness} --- check colimit thinness; this option
+  implies {\tt sharing}.
+\end{itemize}
+For example, specifying \verb!--casl-amalg=colimit-thinness,cell! causes
+colimit thinness and cell condition checks to be performed during
+amalgamability analysis; sharing condition check is a prerequisite for
+these, hence is performed as well. \verb!--casl-amalg=!\
+(i.e. specifying empty list of options) turns the
+amalgamability analysis for \CASL\ off completely. If not specified,
+\verb!--casl-amalg=cell! is used by default.
+
+
+\section{Accessing \Hets\ CVS Repository}
+
+Should you require the up-to-date version of \Hets, it can be acquired
+from the CVS repository at Bremen. Please follow the steps below:
+\begin{enumerate}
+\item set the {\tt CVSROOT} environment variable to 
+\begin{verbatim}
+:pserver:cvsread@cvs-agbkb.informatik.uni-bremen.de:/repository
+\end{verbatim}
+\item enter the command 
+\begin{verbatim}
+cvs login
+\end{verbatim}
+ and when prompted for password enter {\tt cvsread}
+\item enter the command 
+\begin{verbatim}
+cvs export -r stable uni
+\end{verbatim} 
+this will download the sources of UniForm Workbench
+\item enter the command 
+\begin{verbatim}
+cvs export HetCATS
+\end{verbatim}
+this will download the sources of \Hets
+\end{enumerate}
+
+
+
+
+\begin{thebibliography}{99}
+\addcontentsline{toc}{chapter}{Bibliography}
+
+\bibitem[GB92]{gb1} J. A. Goguen and R. M. Burstall. Institutions:
+  Abstract Model Theory for Specification and
+  Programming. \textit{J. ACM} 39(1), pp. 95-146, 1992
+\bibitem[Hets04]{moss2} Till Mossakowski. \Hets\ User Guide, 2004
+\bibitem[HM96]{hm1} Graham Hutton and Erik Meijer. Monadic Parser
+  Combinators. Technical report NOTTCS-TR-96-4, Department of Computer
+  Science, University of Nottingham, 1996
+\bibitem[Hoff01]{hoff1} Piotr Hoffman. Verifying Architectural
+  Specifications. In Maura Cerioli, Gianna Reggio (eds.): \textit{Recent
+  Trends in Algebraic Development Techniques, 15th Intnl. Workshop,
+  WADT 2001}. LNCS 2267, pp. 152-175, Springer 2001 
+\bibitem[Klin00]{klin1} Bartosz Klin. Implementacja semantyki
+  statycznej specyfikacji architekturalnych w formalizmie \CASL,
+  Masters thesis, 2000 (in Polish)
+\bibitem[KHTSM01]{khtsm1} Bartek Klin, Piotr Hoffman, Andrzej
+  Tarlecki, Lutz Schr\"oder and Till Mossakowski. Checking
+  Amalgamability Conditions for \CASL\ Architectural 
+  Specifications. In Jiri Sgall, Ales Pultr, Petr Kolman (eds.):
+  \textit{Mathematical Foundations of Computer Science, 26th Intnl. Symp.,
+  MFCS 2001}. LNCS 2136, pp. 451-463, Springer 2001
+\bibitem[Moss01]{moss1} Till Mossakowski. Implementing logics:
+  from genericity to heterogeneity. Technical report
+\bibitem[NO80]{no1} Greg Nelson and Derek C. Oppen. Fast Decision
+  Procedures Based on Congruence Closure, \textit{J. ACM} 27(2),
+  pp. 356-364, 1980 
+\bibitem[RM04]{refman} Michel Bidoit and Peter D. Moses. \CASL\
+  Reference Manual.LNCS Vol. 2960 (IFIP Series), Springer 2004 
+\bibitem[SMTKH01]{smtkh1} Lutz Schr\"oder, Till Mossakowski, Andrzej Tarlecki,
+  Bartek Klin and Piotr Hoffman. Semantics of Architectural
+  Specifications in \CASL. In Heinrich Hussmann (ed.):
+  \textit{Fundamental Approaches to Software Engineering, 4th
+  Intnl. Conf., FASE 2001}. LNCS 2029, pp. 253-268, Springer 2001   
+\bibitem[UM04]{userman} CoFI (The Common Framework Initiative). \CASL\
+  User Manual. LNCS Vol. 2900 (IFIP Series), Springer 2004
+\end{thebibliography}
+
+\end{document}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% coding: latin-2
+%%% End: 
