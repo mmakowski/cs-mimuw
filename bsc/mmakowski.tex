@@ -1,0 +1,260 @@
+% tutaj by³ szkodliwy komentarz
+%
+% dodaj opcjê [licencjacka] dla pracy licencjackiej
+\documentclass[licencjacka]{pracamgr}
+
+\usepackage{polski}
+\usepackage[T1]{fontenc}
+\usepackage{times}
+\usepackage[latin2]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{comment}
+\usepackage{a4wide}
+\usepackage{longtable}
+\usepackage{multicol}
+
+% Dane magistranta:
+
+\author{Maciej Makowski}
+
+\nralbumu{189188}
+
+\title{Projekt i implementacja systemu wspomagaj±cego tworzenie poprawnych programów}
+
+\kierunek{Informatyka}
+
+% Praca wykonana pod kierunkiem:
+% (podaæ tytu³/stopieñ imiê i nazwisko opiekuna
+% Instytut 
+% ew. Wydzia³ ew. Uczelnia (je¿eli nie MIM UW))
+\opiekun{mgra Janusza Jab³onowskiego \\
+  Instytut Informatyki\\
+  }
+
+% miesi±c i~rok:
+\date{Czerwiec 2002}
+
+% Podaæ klasyfikacjê tematyczn± wed³ug AMS MSC 2000 lub ACM CCS:
+\klasyfikacja{F. Theory of Computation\\
+  F.3 Logics and Meanings of Programs\\
+  F.3.1 Specifying and Verifying and Reasoning about Programs}
+
+% S³owa kluczowe:
+\keywords{logika Hoare'a, poprawno¶æ programów, specyfikacja}
+
+% Tu jest dobre miejsce na Twoje w³asne makra i~¶rodowiska:
+
+% EK: Napisa³em definicje \Andlect i jej u¿ywanie tak, jak powinno byc.
+% Poza tym gdzie¶ by³o u¿yte "\Andlecta", które nie by³o zdefiniowane, wiêc je
+% zdefiniowa³em. (Nie wiem, czy lepiej pisaæ "Andlecta", "¶rodowiska Andlect",
+% czy po prostu "Andlect".)
+\def\Andlect{{\it Andlect}}
+\def\Andlecta{¶rodowiska {\it Andlect}}
+\def\unit #1{\emph{#1}}
+\def\layer #1{#1}
+\def\class #1{\texttt{#1}}
+
+
+% koniec definicji
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Praca dokumentuje zrealizowany w ramach pracowni Zespo³owego Projektu Programistycznego system \Andlect\ wspomagaj±cy tworzenie poprawnych programów poprzez zapewnianie poprawno¶ci syntaktycznej oraz weryfikacjê zgodno¶ci programu ze specyfikacj± (poprawno¶ci semantycznej). W pracy przedstawione zosta³y za³o¿enia oraz zarys systemu.
+\end{abstract}
+
+\tableofcontents
+%\listoffigures
+%\listoftables
+
+\chapter{Wprowadzenie}
+
+\section{Przedmiot projektu}
+
+Podstawow± po¿±dan± w³asno¶ci± programu komputerowego jest jego ogólnie rozumiana poprawno¶æ, któr± rozpatrywaæ mo¿na na trzech poziomach:
+\begin{itemize}
+\item \emph{Poprawno¶æ syntaktyczna} - oznacza zgodno¶æ kodu programu ze sk³adni± wybranego jêzyka programowania.
+\item \emph{Poprawno¶æ kontekstowa} - oznacza u¿ywanie obiektów jêzyka programowania we w³a¶ciwym kontek¶cie. Typowym przyk³adem naruszenia poprawno¶ci kontekstowej jest b³±d niezgodno¶ci typów. 
+\item \emph{Poprawno¶æ semantyczna} - oznacza zgodno¶æ dzia³ania programu z za³o¿eniami (specyfikacj±).
+\end{itemize}
+Systematyczne tworzenie poprawnego programu sk³ada siê zazwyczaj z dwóch faz: w pierwszej program jest konstruowany na podstawie specyfikacji, w drugiej weryfikowana jest jego poprawno¶æ. Wad± podej¶cia polegaj±cego na oddzielaniu tych dwóch faz jest unikanie formalnych technik konstruowania programu na etapie pierwszym, i co za tym idzie du¿a z³o¿ono¶æ drugiego - weryfikacyjnego - etapu. Z tego miêdzy innymi faktu wynik³ pochodz±cy od Griesa pomys³ równoleg³ego tworzenia kodu programu oraz dowodu jego poprawno¶ci. System \Andlect\ stanowi praktyczn± realizacjê owej idei. 
+
+\subsection{Postawienie problemu}
+
+Zasadniczy problem przedstawia takie zorganizowanie ¶rodowiska programisty, które z jednej strony zapewni wszystkie trzy wymienione wy¿ej typy poprawno¶ci programu, a z drugiej bêdzie efektywne w u¿ytkowaniu. Z punktu widzenia realizacji pierwszego celu nale¿y ograniczyæ mo¿liwo¶ci ingerencji programisty w tworzony kod tak, aby uniemo¿liwiæ modyfikacje mog±ce prowadziæ do niekontrolowanej zmiany zaakceptowanego wcze¶niej przez system fragmentu kodu. Z drugiej strony, zbytnie ograniczenie kontroli programisty nad kodem doprowadziæ mo¿e do sytuacji, w której korzystanie z narzêdzia bêdzie niewygodne i nieefektywne. 
+
+Rozwi±zaniem, które wychodzi tym problemom na przeciw jest wykorzystanie idei \emph{edytora strukturalnego} do zapewnienia poprawno¶ci syntaktycznej, wyposa¿enie systemu w \emph{modu³ kontroli poprawno¶ci kontekstowej}, oraz integracja z zewnêtrznym \emph{systemem wspomagania dowodzenia twierdzeñ}, w celu zapewnienia poprawno¶ci semantycznej.
+
+\subsection{Kontekst}
+
+\Andlect\ jest rozwi±zaniem pionierskim, nie posiadaj±cym obecnie odpowiedników na rynku narzêdzi wspomagaj±cych tworzenie oprogramowania. Docelowym u¿ytkownikiem jest programista, zarówno pocz±tkuj±cy jak i zaawansowany, przy czym szczególn± rolê \Andlecta\ widzimy w zastosowaniach z zakresu propedeutyki programowania, jako narzêdzia wyrabiaj±cego u pocz±tkuj±cego programisty w³a¶ciw± technikê my¶lenia o programach i ich konstruowania.
+ 
+
+\section{Podzia³ pracy}
+Jako ¿e projekt realizowany by³ w ramach pracowni Zespo³owego Projektu Programistycznego, powsta³e oprogramowanie oraz dokumentacja stanowi± efekt pracy ca³ego zespo³u, na który sk³adali siê:
+\begin{itemize}
+\item Eryk Kopczyñski
+\item Maciej Makowski
+\item Maciej Mostowski
+\item Jerzy Szczepkowski
+\end{itemize}
+Jako kierownik projektu sprawowa³em organizacyjny nadzór nad dzia³aniami zespo³u. Na etapie analizy i projetkowania uczestniczy³em w tworzeniu wszystkich powstaj±cych dokumentów ({\it Vision}, {\it Business Use Case}, {\it Software Development Plan}, {\it Software Architecture Document}). Dodatkowo zaprojektowa³em i zaprogramowa³em warstwê interfejsu u¿ytkownika (modu³ {\tt ui}) oraz mechanizm komunikacji miêdzy warstw± funkcjonaln± i warstw± interfejsu (modu³ {\tt engine.event}).
+
+\chapter{Omówienie systemu}
+
+\section{Za³o¿enia}
+\Andlect\ jest ¶rodowiskiem niezale¿nym od innych narzêdzi programistycznych, w szczególno¶ci kompilatorów, debuggerów itp. Nie stanowi zatem ¶rodowiska typu IDE, umo¿liwiaj±cego sprawne wpisywanie kodu programu, kompilowanie i uruchamianie. Zadaniem \Andlecta\ jest jedynie u³atwienie konstrukcji samego kodu - wspó³praca z zewnêtrznymi kompilatorami i narzêdziami operuj±cymi na kodzie ¼ród³owym ogranicza siê do mo¿liwo¶ci eksportu takiego kodu z dokumentów \Andlecta\ (zawieraj±cych, poza samym kodem, dodatkowe informacje konieczne do weryfikacji poprawno¶ci) do postaci przyjmowanej przez kompilator.
+
+Dodatkowo, ze wzglêdu na du¿± z³o¿ono¶æ zagadnieñ zwi±zanych z automatycznym dowodzeniem poprawno¶ci, modu³ dowodzenia poprawno¶ci \Andlect\ nie wykonuje tych zadañ sam, lecz ogranicza siê do eksportu danych wej¶ciowych do zewnêtrznego systemu wspomagaj±cego dowodzenie twierdzeñ, który przeprowadza dowód, a nastêpnie zwraca wynik, który z kolei interpretowany jest przez modu³ dowodzenia poprawno¶ci \Andlect.
+
+\section{Dekompozycja logiczna systemu}
+
+\subsection{Omówienie}
+
+System sk³ada siê z jednej aplikacji. Aplikacja dekomponuje siê na nastêpuj±ce warstwy: \layer{warstwê funkcjonaln±} i \layer{warstwê interfejsu u¿ytkownika}. Warstwy te s± podzielone na modu³y realizuj±ce odrêbne zadania.
+
+\subsection{Najwa¿niejsze komponenty}
+
+\subsubsection{Warstwa funkcjonalna}
+
+\paragraph{Modu³ \unit{Language}}
+% EK: Opis tego modu³u by³ nieaktualny (brak FunctionSet, a by³ KeyShortcut,
+% który w koñcu chyba nie by³ u¿ywany)
+
+Ten modu³:
+\begin{itemize}
+\item Udostêpnia klasê \class{Language}. Obiekty tej klasy przechowuj±
+specyfikacje jêzyków programowania, wczytywane z plików.
+\item Udostêpnia klasê \class{FunctionSet}. Obiekty tej klasy przechowuj±
+informacje dla parsera wyra¿eñ (modu³ \unit{Parser}), czyli specyfikacje
+zbiorów funkcji i operatorów.
+\item Pozwala na wczytywanie plików zawieraj±cych specyfikacjê jêzyków i
+zbiorów funkcji.
+\end{itemize}
+Struktura obiektów klasy \class{Language} jest analogiczna do struktury pliku z
+zapisem specyfikacji, z tym, ¿e wszystkie elementy s± przetworzone (w tym
+sparsowane). W szczególno¶ci, obiekty te zawieraj±:
+\begin{itemize}
+\item Zbiór kategorii syntaktycznych (\class{SyntaxCat}),
+\item Zbiór abstrakcyjnych instrukcji (\class{AbsInstruction}). Dla ka¿dej
+instrukcji abstrakcyjnej okre¶lone s± jej kategorie syntaktyczne, parametry
+i regu³y poprawno¶ci.
+\item Zbioru widoków (\class{ViewFormat}). Ka¿dy widok okre¶la dla ka¿dej instrukcji
+abstrakcyjnej jej wygl±d na ekranie.
+\item Zbioru formatów eksportu (\class{ExportFormat}). Ka¿dy format eksportu
+okre¶la dla ka¿dej instrukcji abstrakcyjnej sposób jej eksportu w tym formacie.
+\item Obiekt klasy \class{FunctionSet} opisuj±cy stosowany w tym jêzyku
+jêzyk wyra¿eñ.
+\item Obiekt klasy \class{FunctionSet} opisuj±cy metajêzyk, w którym zosta³y
+zapisane regu³y dowodzenia dla danego jêzyka.
+\end{itemize}
+
+\paragraph{Modu³ \unit{Project}}
+% EK: Opis tego modu³u by³ trochê nieaktualny (nie by³o informacji o eksporcie)
+
+Ten modu³:
+\begin{itemize}
+\item Udostêpnia klasê \class{Instruction}. Obiekt tej klasy przechowuje
+informacjê o jednej instrukcji, takie jak parametry (w tym podinstrukcje) i
+stan poprawno¶ci. Parametry s± obiektami podklas klasy {\tt Parameter}, w
+zale¿no¶ci od rodzaju parametru (wyra¿enie, warunek itp.) Dla podinstrukcji
+podklas± jest samo \class{Instruction}.
+\item Udostêpnia klasê \class{Project}. Obiekt klasy \class{Project}
+przechowuje informacjê o projekcie otwartym w systemie.
+\item Pozwala na zapisywanie do pliku i czytanie z pliku obiektów klasy
+\class{Project}.
+\item Pozwala na zamianê obiektów klasy \class{Instruction} na zwyk³y tekst,
+w celu zapisania go do pliku (eksportu) lub wy¶wietlenia na ekranie.
+\item W momencie dokonania zmian w projekcie sprawdza, które instrukcje staj±
+siê poprawne b±d¼ niepoprawne (tzn. zmieniaj± swój stan poprawno¶ci). Komunikuje
+siê z modu³em \unit{Parser} w celu przeparsowania zmienionych wyra¿eñ i wysy³a
+przetworzone informacje do interfejsu wybranego weryfikatora.
+\end{itemize}
+
+\paragraph{Modu³ \unit{Parser}}
+
+Ten modu³ s³u¿y do transformacji:
+\begin{itemize}
+\item wystêpuj±cych w programie wyra¿eñ (logicznych i arytmetycznych) 
+\item warunków poprawno¶ci programu
+\item regu³ dowodzenia
+\end{itemize}
+Reprezentacjê w postaci ci±gu znaków (naturaln± dla cz³owieka) sprowadza do reprezentacji w postaci drzewa (naturalnej dla \Andlecta\ i zewnêtrznego weryfikatora).
+
+\paragraph{Modu³ \unit{Verify}}
+
+Ten modu³ s³u¿y do komunikacji pozosta³ych modu³ów (a bezpo¶rednio modu³u
+\unit{Project}) z zewnêtrznym weryfikatorem twierdzeñ. Dla ka¿dego
+dopuszczalnego weryfikatora jest osobny interfejs tego weryfikatora, tzn. 
+klasa komunikuj±ca siê z nim.
+
+\paragraph{Modu³ \unit{Event}}
+
+Ten modu³ udostêpnia mechanizm zg³aszania zdarzeñ wykorzystywany do komunikacji z \layer{warstw± interfejsu u¿ytkownika}. Dziêki temu rozwiazaniu \layer{warstwa funkcjonalna} jest niezale¿na od konkretnego interfejsu u¿ytkownika.
+
+
+\subsubsection{Warstwa interfejsu}
+
+\paragraph{Modu³ \unit{UI}}
+
+Ten modu³ zajmuje siê komunikacj± z u¿ytkownikiem:
+\begin{itemize}
+\item Wy¶wietla na ekranie tre¶æ otwartego projektu, razem z oznaczeniami
+stanów poszczególnych instrukcji.
+\item Pozwala na edycjê projektu --- zmiany zostaj± wysy³ane do modu³u
+\unit{Project}.
+\item Pozwala u¿ytkownikowi wywo³ywaæ poszczególne opcje programu realizowane
+przez \layer{warstwê funkcjonaln±} takie, jak eksport i zapis/³adowanie projektu.
+\item Pozwala u¿ytkownikowi wywo³ywaæ opcje takie, jak wybór widoku i
+korzystanie ze schowka. Opcje te realizowane s± przez modu³ \unit{UI}.
+\end{itemize} 
+
+\begin{figure}\begin{center}
+\setlength{\unitlength}{1.5pt}
+{\begin{picture}(319,285)(70,95)
+\def\ounit{{\oval(55,34)}}
+\def\uname #1{{\makebox(0,0){\unit{#1}}}}
+\thicklines
+\put(200,300){\ounit}
+\put(200,300){\uname{UI}}
+\put(200,200){\ounit}
+\put(200,200){\uname{Project}}
+\put(105,230){\ounit}
+\put(105,230){\uname{Language}}
+\put(141,120){\ounit}
+\put(141,120){\uname{Parser}}
+\put(295,245){\ounit}
+\put(295,245){\uname{Event}}
+\put(259,120){\ounit}
+\put(259,120){\uname{Verify}}
+\put(200,365){\makebox(0,0)[b]{U¿ytkownik}}
+\put(205,320){\vector(0,1){40}}
+\put(195,360){\vector(0,-1){40}}
+\put(200,280){\vector(0,-1){60}}
+%\put(265,243){\vector(-1,1){40}}
+\put(175,283){\vector(-1,-1){40}}
+%\put(265,230){\vector(-1,0){130}}
+\put(175,215){\vector(-1,0){45}}
+%\put(225,215){\vector(1,0){45}}
+\put(123,211){\vector(0,-1){72}}
+\put(219,181){\vector(1,-2){21}}
+\put(181,181){\vector(-1,-2){21}} 
+\put(289,120){\vector(1,0){60}}
+\put(350,121){\makebox(0,0)[lb]{Zewnêtrzny}}
+\put(350,119){\makebox(0,0)[lt]{weryfikator}}
+\put(75,265){\dashbox{5}(250,75)[lt]{Warstwa interfejsu \rule{0pt}{15pt}}}
+\put(75,100){\dashbox{5}(250,165)[lt]{Warstwa funkcjonalna \rule{0pt}{15pt}}}
+\end{picture}}\par
+{\bf Diagram \ref{fig:dia}}
+\end{center}\label{fig:dia}\end{figure} 
+
+
+\end{document}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% coding: latin-2
+%%% End: 
